@@ -6,7 +6,7 @@
      dotenv.config({
           path: './.env'
      });
-     const PORT = Number(process.env.PORT) || 8001;
+     const PORT = Number(process.env.PORT) || 3000;
 
      app.listen(PORT,"0.0.0.0", () => {
                logger.info(`Server is running on port ${PORT}`);

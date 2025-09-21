@@ -1,2 +1,26 @@
 {"level":"info","message":"Server is running on port 8001","timestamp":"2025-08-28T22:40:23.395Z"}
 {"level":"info","message":"{\"method\":\"POST\",\"url\":\"/api/v1/url\",\"status\":\"500\",\"responseTime\":\"5439.183\"}","timestamp":"2025-08-28T22:42:05.461Z"}
+{"level":"info","message":"Server is running on port 8001","timestamp":"2025-09-21T10:38:51.328Z"}
+{"level":"info","message":"Server is running on port 8001","timestamp":"2025-09-21T10:44:07.557Z"}
+{"level":"info","message":"Server is running on port 8001","timestamp":"2025-09-21T10:50:58.004Z"}
+{"level":"info","message":"Server is running on port 8001","timestamp":"2025-09-21T10:51:17.354Z"}
+{"level":"info","message":"Server is running on port 8001","timestamp":"2025-09-21T10:51:23.600Z"}
+{"level":"info","message":"Server is running on port 8001","timestamp":"2025-09-21T10:51:33.739Z"}
+{"level":"info","message":"Server is running on port 8001","timestamp":"2025-09-21T10:51:39.173Z"}
+{"level":"info","message":"Server is running on port 8001","timestamp":"2025-09-21T10:51:54.085Z"}
+{"level":"info","message":"Server is running on port 8001","timestamp":"2025-09-21T10:51:59.070Z"}
+{"level":"info","message":"Server is running on port 8001","timestamp":"2025-09-21T10:52:03.659Z"}
+{"level":"info","message":"Server is running on port 8001","timestamp":"2025-09-21T10:52:25.098Z"}
+{"level":"info","message":"Server is running on port 8001","timestamp":"2025-09-21T10:52:28.392Z"}
+{"level":"info","message":"Server is running on port 8001","timestamp":"2025-09-21T10:52:38.149Z"}
+{"level":"info","message":"Server is running on port 8001","timestamp":"2025-09-21T10:54:12.717Z"}
+{"level":"info","message":"Server is running on port 3000","timestamp":"2025-09-21T10:56:10.830Z"}
+{"level":"info","message":"{\"method\":\"GET\",\"url\":\"/api/v1/healthcheck\",\"status\":\"200\",\"responseTime\":\"49.989\"}","timestamp":"2025-09-21T10:56:30.890Z"}
+{"level":"info","message":"{\"method\":\"GET\",\"url\":\"/api/v1/url\",\"status\":\"404\",\"responseTime\":\"4.286\"}","timestamp":"2025-09-21T10:57:36.650Z"}
+{"level":"info","message":"{\"method\":\"POST\",\"url\":\"/api/v1/url\",\"status\":\"500\",\"responseTime\":\"70.690\"}","timestamp":"2025-09-21T10:57:42.544Z"}
+{"level":"info","message":"Server is running on port 3000","timestamp":"2025-09-21T10:58:23.829Z"}
+{"level":"info","message":"{\"method\":\"POST\",\"url\":\"/api/v1/url\",\"status\":\"200\",\"responseTime\":\"1815.131\"}","timestamp":"2025-09-21T10:58:28.761Z"}
+{"level":"info","message":"{\"method\":\"POST\",\"url\":\"/api/v1/url\",\"status\":\"200\",\"responseTime\":\"1721.542\"}","timestamp":"2025-09-21T11:00:30.593Z"}
+{"level":"info","message":"{\"method\":\"POST\",\"url\":\"/api/v1/url\",\"status\":\"200\",\"responseTime\":\"2698.671\"}","timestamp":"2025-09-21T11:01:44.278Z"}
+{"level":"info","message":"{\"method\":\"POST\",\"url\":\"/api/v1/url\",\"status\":\"200\",\"responseTime\":\"2695.131\"}","timestamp":"2025-09-21T11:13:45.482Z"}
+{"level":"info","message":"{\"method\":\"POST\",\"url\":\"/api/v1/url\",\"status\":\"200\",\"responseTime\":\"3109.326\"}","timestamp":"2025-09-21T11:14:31.204Z"}

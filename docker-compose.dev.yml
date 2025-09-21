@@ -12,6 +12,7 @@ services:
       - "8001:3000"
     env_file:
       - ./api-gateway/.env
+    command: ["npm", "run", "dev"]
     networks:
       - veren
 
@@ -27,6 +28,7 @@ services:
       - "8002:3000"
     env_file:
       - ./submission-service/.env
+    command: ["npm", "run", "dev"]
     networks:
       - veren
 
@@ -42,6 +44,7 @@ services:
       - "8003:3000"
     env_file:
       - ./extractor-service/.env
+    command: ["npm", "run", "dev"]
     networks:
       - veren
 
@@ -52,4 +55,4 @@ volumes:
 
 networks:
   veren:
-    external: true
+    external: false

@@ -13,15 +13,30 @@ export async function cloneRepo(repoUrl: string, frontend : string, backend: str
     
     try {
         console.log("Cloning", repoUrl, "into", baseDir);
+
         fs.mkdirSync(baseDir, { recursive: true });
+        
         const git = simpleGit();
         await git.clone(repoUrl, baseDir, ["--depth=1"]);
+        
         // MAKING BACKEND AND FRONTEND DIRECTORIES
         const backendDir = path.join(baseDir, 'backend');
         const frontendDir = path.join(baseDir, 'frontend');
-        fs.mkdirSync(backendDir, { recursive: true });
-        fs.mkdirSync(frontendDir, { recursive: true });
-        console.log("Created backend and frontend directories");
+        
+        if(!fs.existsSync(backendDir)){
+            fs.mkdirSync(backendDir, { recursive: true });
+            console.log("Created backend directories");
+        }else{
+            console.log("Backend folder already exists skipping creation");
+        }
+        
+        if(!fs.existsSync(frontendDir)){
+            fs.mkdirSync(frontendDir, { recursive: true });
+            console.log("Created frontend directories");
+        }else{
+            console.log("Frontend folder already exists skipping creation");
+        }
+
         return { projectId, baseDir, backendDir, frontendDir};
 
     } catch (error) {

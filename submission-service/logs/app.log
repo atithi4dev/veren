@@ -1,1 +1,9 @@
 {"level":"info","message":"Server is running on port 3000","timestamp":"2025-08-28T22:39:55.451Z"}
+{"level":"info","message":"Server is running on port 3000","timestamp":"2025-09-21T10:44:07.940Z"}
+{"level":"info","message":"Server is running on port 3000","timestamp":"2025-09-21T10:56:10.833Z"}
+{"level":"info","message":"{\"method\":\"POST\",\"url\":\"/api/v1/url\",\"status\":\"400\",\"responseTime\":\"28.120\"}","timestamp":"2025-09-21T10:57:42.537Z"}
+{"level":"info","message":"{\"method\":\"POST\",\"url\":\"/api/v1/url\",\"status\":\"200\",\"responseTime\":\"1759.937\"}","timestamp":"2025-09-21T10:58:28.749Z"}
+{"level":"info","message":"{\"method\":\"POST\",\"url\":\"/api/v1/url\",\"status\":\"200\",\"responseTime\":\"1707.259\"}","timestamp":"2025-09-21T11:00:30.588Z"}
+{"level":"info","message":"{\"method\":\"POST\",\"url\":\"/api/v1/url\",\"status\":\"200\",\"responseTime\":\"2688.287\"}","timestamp":"2025-09-21T11:01:44.275Z"}
+{"level":"info","message":"{\"method\":\"POST\",\"url\":\"/api/v1/url\",\"status\":\"200\",\"responseTime\":\"2684.027\"}","timestamp":"2025-09-21T11:13:45.478Z"}
+{"level":"info","message":"{\"method\":\"POST\",\"url\":\"/api/v1/url\",\"status\":\"200\",\"responseTime\":\"3098.133\"}","timestamp":"2025-09-21T11:14:31.200Z"}

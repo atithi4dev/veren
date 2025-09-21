@@ -1,33 +1,32 @@
 {
-    "name": "api-gateway",
-    "version": "1.0.0",
-    "main": "dist/index.js",
-    "license": "MIT",
-    "type": "module",
-    "scripts": {
-        "dev": "ts-node-dev --loader ts-node/esm --poll --respawn --transpile-only src/index.ts",
-        "build": "tsc",
-        "start": "node dist/index.js"
-    },
-    "dependencies": {
-        "axios": "^1.6.0",
-        "cookie-parser": "^1.4.7",
-        "cors": "^2.8.5",
-        "dotenv": "^16.3.1",
-        "express": "^4.18.2",
-        "http-proxy-middleware": "^2.0.6",
-        "morgan": "^1.10.1",
-        "winston": "^3.17.0"
-    },
-    "devDependencies": {
-        "@types/cookie-parser": "^1.4.9",
-        "@types/cors": "^2.8.19",
-        "@types/express": "^4.17.21",
-        "@types/morgan": "^1.9.10",
-        "@types/node": "^20.5.9",
-        "nodemon": "^3.1.10",
-        "ts-node": "^10.9.2",
-        "ts-node-dev": "^2.0.0",
-        "typescript": "^5.2.2"
-    }
+  "name": "api-gateway",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon --watch src --ext ts --exec \"node --loader ts-node/esm src/index.ts\"",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "http-proxy-middleware": "^2.0.6",
+    "morgan": "^1.10.1",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.9",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.21",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^20.5.9",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.2.2"
+  }
 }

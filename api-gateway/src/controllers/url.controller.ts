@@ -6,7 +6,6 @@ export async function handleUrl(req: Request, res: Response) {
     console.log("Request received at API Gateway");
     const { url } = req.body;
 
-    // 👇 Notice "submission-service" is the service name from docker-compose
     const response = await axios.post(
       "http://submission-service:3000/api/v1/url",
       { url }

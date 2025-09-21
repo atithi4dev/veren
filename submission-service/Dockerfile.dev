@@ -1,11 +1,17 @@
 FROM node:20-bullseye
-WORKDIR /src
-COPY package*.json ./
-RUN npm install
-COPY tsconfig.json ./
 
-# Expose port
+WORKDIR /src
+
+# Install deps (include devDependencies since we need nodemon + ts-node inside container)
+COPY package*.json ./
+COPY tsconfig.json ./
+RUN npm install
+
+# Copy everything else
+COPY . .
+
+# Default port (will be overridden by docker-compose)
 EXPOSE 3000
 
-# Start dev server
+# Run dev server with nodemon + ts-node/esm
 CMD ["npm", "run", "dev"]
