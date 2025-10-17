@@ -6,12 +6,12 @@ User / Frontend
      |  - Store metadata (DONE)
      v
 2. Repo Extraction Service
-     |  - Clone repo securely 
-     |  - Recursive folder scan
-     |  - Detect frontend/backend folders
+     |  - Clone repo securely (DONE)
+     |  - Recursive folder scan (DONE)
+     |  - Detect frontend/backend folders (DONE)
      v
 3a. Frontend Build & Deployment
-     |  - Detect React / static
+     |  - Detect React / static 
      |  - Build (`npm run build`)
      |  - Serve on a simple Node.js or static server
      v

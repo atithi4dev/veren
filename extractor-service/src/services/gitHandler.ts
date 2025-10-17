@@ -1,7 +1,7 @@
 import {simpleGit} from "simple-git";
 import path from "path";
 import fs from "fs";
-import crypto from "crypto";
+import { uploadToS3 } from "./S3/UploadRepositoryToS3.js";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -41,8 +41,9 @@ export async function cloneRepo(repoUrl: string, frontend : string, backend: str
         }else{
             console.log("Frontend folder already exists skipping creation");
         }
+        await uploadToS3(baseDir, projectId);
 
-        return { projectId, baseDir, backendDir, frontendDir};
+        return { projectId, baseDir, backendDir, frontendDir };
 
     } catch (error) {
         console.error(`Error cloning ${repoUrl} into ${baseDir}:`, error);

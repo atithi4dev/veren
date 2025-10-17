@@ -18,8 +18,9 @@ export default async function urlController(req: Request, res: Response) {
       return res.status(400).json({ success: false, message: "URL and token are required" });
     }
 
-    console.log("📥 Received URL:", url, "and token:", token);
+    console.log("Received URL:", url, "and token:", token.slice(0,4) + '***');
 
+    // MAINTAIN A DISK DATABASE (data.json file)
     let data: Array<{ id: string; url: string, token: string }> = [];
     try {
       const raw = await fs.readFile(dataFilePath, "utf-8");
@@ -34,11 +35,11 @@ export default async function urlController(req: Request, res: Response) {
 
     // Write back to file
     await fs.writeFile(dataFilePath,
-       JSON.stringify(data, null, 2), "utf-8");
+      JSON.stringify(data, null, 2), "utf-8");
 
- const response = await axios.post(
+    const response = await axios.post(
       "http://extractor-service:3000/api/v1/url",
-      { urls:{repoUrl:url,backend:`${url}/backend`, frontend:`${url}/frontend`}, id, token }
+      { urls: { repoUrl: url, backend: `${url}/backend`, frontend: `${url}/frontend` }, id, token }
     );
 
     res.json({

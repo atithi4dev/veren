@@ -12,7 +12,8 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-*.env
+extractor-service/*.env
+submission-service/*.env
 *.local
 api-gateway/.env
 api-gateway/*.local
@@ -20,6 +21,11 @@ api-gateway/*.local
 .DS_Store
 Thumbs.db
 
+api-gateway/src/postgres.env
+backend-service/node_modules
+api-gateway/node_modules
+extractor-service/node_modules
+submission-service/node_modules
 # IDE / Editor files
 .vscode/
 .idea/

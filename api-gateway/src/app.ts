@@ -44,14 +44,14 @@ app.use(express.static('public'));
 // Routes Imports
 import healthCheckRouter from "./routes/healthCheck.route.js";
 import urlRouter from "./routes/url.route.js";
-import LoginGithub from "./routes/auth.route.js";
+import AuthHandler from "./routes/auth.route.js";   
 import RepoHandler from "./routes/repo.route.js";
 
 
 // Routes Forwarding
 app.use("/api/v1/healthcheck", healthCheckRouter)
 app.use("/api/v1/url", urlRouter)
-app.use("/api/v1/login", LoginGithub)
+app.use("/api/v1/auth", AuthHandler)
 app.use("/api/v1/repo", RepoHandler)
 
 app.use(errorHandler)

@@ -5,7 +5,6 @@ import fetch from "node-fetch";
 // LOGIN CONTROLLER
 
 export async function LoginController(req: Request, res: Response) {
-    console.log("LoginController called");
     const state = crypto.randomBytes(16).toString("hex");
     req.session.oauthState = state;
 
@@ -39,7 +38,6 @@ export async function CallbackController (req: Request, res: Response){
         return res.status(500).json({ success: false, message: "Missing Github Credentials" });
     }
 
-
     try {
         const tokenResp = await fetch("https://github.com/login/oauth/access_token", {
             method: "POST",
@@ -54,22 +52,17 @@ export async function CallbackController (req: Request, res: Response){
             })
         });
 
+        if(!tokenResp.ok) throw new Error(`Github responded with ${tokenResp.status}`);
+
         const tokenJson = (await tokenResp.json()) as { access_token?: string };
         if (!tokenJson.access_token) {
             return res.status(400).json({ success: false, message: "Failed to get access token" });
         }
 
         req.session.githubToken = tokenJson.access_token;
-        console.log("GitHub token stored in session", req.session);
-        res.redirect("/api/v1/login/redirect");
-
+        res.redirect(`${process.env.FRONTEND_URL}/profile`);
     } catch (err: any) {
         console.error(err);
         res.status(500).json({ success: false, message: "Github OAuth Error" });
     }
-}
-
-export async function Redirected(req: Request, res: Response){
-    console.log("Redirected called");
-    res.redirect(`${process.env.FRONTEND_URL}/profile`);
 }
