@@ -21,15 +21,11 @@ app.use(express.urlencoded({extended: true, limit: '16kb'}))
 app.use(cookieParser()); 
 app.use(express.static('public'));
 
-
 // Routes Imports
-import healthCheckRouter from "./routes/healthCheck.route.js";
-import urlRouter from "./routes/url.route.js";
-// import urldeploymentDataRouter from "./routes/deployment.route.js";
+import serveHandler from "./routes/frontend.routes.js";
 
 // Routes Forwarding
-app.use("/api/v1/healthcheck", healthCheckRouter)
-app.use("/api/v1/url", urlRouter)
+app.use("/*", serveHandler)
 
 app.use(errorHandler)
 

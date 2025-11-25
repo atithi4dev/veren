@@ -1,5 +1,5 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import path, { dirname } from "path";
+import path from "path";
 import readDirRecursive from "../../utils/readDirRecursive.js";
 import fs from "fs";
 import mime from "mime-types";
@@ -16,25 +16,43 @@ const s3Client = new S3Client({
     }
 });
 
+// Helper: Break array into chunks
+function chunkArray<T>(arr: T[], size: number): T[][] {
+    const result = [];
+    for (let i = 0; i < arr.length; i += size) {
+        result.push(arr.slice(i, i + size));
+    }
+    return result;
+}
+
 async function uploadToS3(directoryPathToRepo: string, projectId: string) {
     try {
-        const RepoFolderPath = path.join(__dirname, '../../../clones', projectId)
+        const RepoFolderPath = path.join(__dirname, "../../../clones", projectId, 'frontend','dist');
 
-        const repoFolderContents = readDirRecursive(RepoFolderPath)
+        const files = readDirRecursive(RepoFolderPath);
 
-        await Promise.all(repoFolderContents.map(async (file) => {
-            const filePath = path.join(RepoFolderPath, file);
-            if (fs.lstatSync(filePath).isDirectory()) return;
+        const batches = chunkArray(files, 5);
 
-            const command = new PutObjectCommand({
-                Bucket: process.env.S3_BUCKET as string,
-                Key: `__outputs/${projectId}/${file}`,
-                Body: fs.createReadStream(filePath),
-                ContentType: mime.lookup(filePath) || "application/octet-stream",
-            });
+        for (const batch of batches) {
+            await Promise.all(
+                batch.map(async (file) => {
+                    const filePath = path.join(RepoFolderPath, file);
 
-            await s3Client.send(command);
-        }));
+                    if (fs.statSync(filePath).isDirectory()) return;
+
+                    const command = new PutObjectCommand({
+                        Bucket: process.env.S3_BUCKET as string,
+                        Key: `__outputs/${projectId.toLowerCase()}/${file}`,
+                        Body: fs.createReadStream(filePath),
+                        ContentType: mime.lookup(filePath) || "application/octet-stream",
+                    });
+
+                    await s3Client.send(command);
+                })
+            );
+
+            console.log(`Uploaded batch of ${batch.length} files`);
+        }
 
         console.log("REPOSITORY UPLOADED");
 
@@ -43,4 +61,4 @@ async function uploadToS3(directoryPathToRepo: string, projectId: string) {
     }
 }
 
-export { uploadToS3 }
+export { uploadToS3 };

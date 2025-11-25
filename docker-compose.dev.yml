@@ -26,6 +26,7 @@ services:
     command: [ "npm", "run", "dev" ]
     networks:
       - veren
+  
 
   extractor-service:
     build:
@@ -35,6 +36,7 @@ services:
     volumes:
       - ./extractor-service:/src
       - extractor_node_modules:/src/node_modules
+      - clones-data:/clones
     ports:
       - "8003:3000"
     env_file:
@@ -42,6 +44,41 @@ services:
     command: [ "npm", "run", "dev" ]
     networks:
       - veren
+
+  routing-service:
+    build:
+      context: ./routing-service
+      dockerfile: Dockerfile.dev
+    container_name: routing-service
+    volumes:
+      - ./routing-service:/src
+      - routing_node_modules:/src/node_modules
+      - clones-data:/clones
+    ports:
+      - "8004:3000"
+    env_file:
+      - ./routing-service/.env
+    command: [ "npm", "run", "dev" ]
+    networks:
+      - veren
+
+  backend-service:
+    build:
+      context: ./backend-service
+      dockerfile: Dockerfile.dev
+    container_name: backend-service
+    volumes:
+      - ./backend-service:/src
+      - backend_node_modules:/src/node_modules
+      - clones-data:/clones
+    ports:
+      - "8005:3000"
+    env_file:
+      - ./backend-service/.env
+    command: [ "npm", "run", "dev" ]
+    networks:
+      - veren
+
 
   # postgres:
   #   image: postgres:15
@@ -59,7 +96,10 @@ volumes:
   api_node_modules:
   submission_node_modules:
   extractor_node_modules:
+  routing_node_modules:
+  backend_node_modules:
   pgdata:
+  clones-data:
 
 
 networks:

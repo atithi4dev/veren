@@ -25,15 +25,12 @@ app.use(express.static('public'));
 
 // Routes Imports
 import healthCheckRouter from "./routes/healthCheck.route.js";
+import operationRouter from "./routes/operational.route.js";
 
 
 // Routes Forwarding
 app.use("/api/v1/healthcheck", healthCheckRouter)
-
-
-app.listen(PORT, ()=>{
-  console.log(`Server is running on port ${PORT}`);
-})
+app.use("/api/v1/operational", operationRouter)
 
 app.use(errorHandler)
 

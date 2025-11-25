@@ -20,7 +20,7 @@ app.use(
     session({
         secret: process.env.SESSION_SECRET || "default_secret",
         resave: false,
-        saveUninitialized: true,
+        saveUninitialized: false,
         store: MongoStore.create({
             mongoUrl: process.env.MONGO_CONN_STRING ? process.env.MONGO_CONN_STRING : "mongodb://localhost:27017/verenDB",
             ttl: 30 * 24 * 60 * 60,
@@ -29,6 +29,7 @@ app.use(
         cookie: {
             secure: false,
             httpOnly: true,
+            sameSite: "lax",
             maxAge: 30 * 24 * 60 * 60 * 1000,
         }
     })
@@ -47,12 +48,15 @@ import urlRouter from "./routes/url.route.js";
 import AuthHandler from "./routes/auth.route.js";   
 import RepoHandler from "./routes/repo.route.js";
 
+// ROUTING SERVCIE SPECIAL IMPORTS AND FORWARDING
+import RouteHandler from "./routes/router.route.js";
 
 // Routes Forwarding
 app.use("/api/v1/healthcheck", healthCheckRouter)
 app.use("/api/v1/url", urlRouter)
 app.use("/api/v1/auth", AuthHandler)
 app.use("/api/v1/repo", RepoHandler)
+app.use("/api/v1/route", RouteHandler)
 
 app.use(errorHandler)
 
