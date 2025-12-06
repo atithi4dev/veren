@@ -1,9 +1,8 @@
 
 import { Request, Response } from "express";
-import { cloneRepo } from "../services/GitHandler/gitHandler.js";
-import axios from "axios";
+import { cloneQueue } from "../job/queue/clone-queue.js";
+
 export default async function urlController(req: Request, res: Response) {
-  
   const {urls:{repoUrl,frontend, backend},id, token} = req.body;
 
   if(!id || !frontend || !backend){
@@ -13,35 +12,42 @@ export default async function urlController(req: Request, res: Response) {
   console.log("TIME FOR FORK:", repoUrl);
 
   try {
-    const {projectId, baseDir, backendDir, frontendDir} = await cloneRepo(repoUrl, frontend, backend, id, token);
-    
- 
-    console.log("SENDING REQUEST TO BACKEND SERVICE FOR OPERATIONAL CHECK");
+
+    // QUEUE FOR CLONE + BUILD + (DOCKERFILE -- ON HOLD)
+     await cloneQueue.add(
+      "cloneQueue",
+      {
+       repoUrl, frontend, backend, id, token
+      },
+      {
+        attempts: 5,
+        backoff: {
+          type: "exponential",
+          delay: 1000,
+        },
+        removeOnComplete: true,
+        removeOnFail: true,
+      }
+    );
+
     /// WILL BE REMOVED AFTER ADDING REDIS + BULLMQ PIPELINE  and will be using direct pascalls using main functional pipeline
 
+    // REMOVE
     // ----------------------------------------------------
-    const response = await axios.post(
-      "http://backend-service:3000/api/v1/operational",
-      { id:projectId },
-      { timeout: 10000 }
-    );
+    // const response = await axios.post(
+    //   "http://backend-service:3000/api/v1/operational",
+    //   { id:id },
+    //   { timeout: 10000 }
+    // );
     // ----------------------------------------------------
+    // console.log("Response from router service:", response.data);
 
-    console.log("Response from router service:", response.data);
-
-    console.log("CLONED:", projectId, baseDir, backendDir, frontendDir);
-    
     return res.json({
       success: true,
-      id: projectId,
+      id: id,
       repoUrl,
       token,
-      dir:{baseDir, backendDir, frontendDir},
-      services: {
-        backend: `${process.env.BASEURI}/backend/${projectId}`,
-        frontend: `${process.env.BASEURI}/frontend/${projectId}`,
-      },
-      message: `Repo cloned successfully into ${baseDir}`
+      message: `Repo under clone phase`
     });
   } catch (error) {
     

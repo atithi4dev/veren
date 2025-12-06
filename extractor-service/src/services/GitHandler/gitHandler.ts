@@ -5,6 +5,7 @@ import { uploadToS3 } from "../S3/UploadRepositoryToS3.js";
 import { fileURLToPath } from "url";
 import { folderCheck } from "./PathCheck.js";
 import { buildFrontend } from "../distributionHandler/BuildDistFolder.js";
+import logger from "../../logger/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,9 +13,12 @@ const __dirname = path.dirname(__filename);
 export async function cloneRepo(repoUrl: string, frontend : string, backend: string, id: string, token:string) {
     const projectId = id;
     const baseDir = path.join(__dirname, '../../clones', projectId);
+    if(fs.existsSync(baseDir)){
+        logger.info("Directory already exists. Skipping clone for project:", projectId);
+    }
     
     try {
-        console.log("Cloning", repoUrl, "into", baseDir);
+        logger.info("Cloning", repoUrl, "into", baseDir);
 
         fs.mkdirSync(baseDir, { recursive: true });
         
@@ -26,7 +30,7 @@ export async function cloneRepo(repoUrl: string, frontend : string, backend: str
         const git = simpleGit();
         await git.clone(authRepoUrl, baseDir, ["--depth=1"]);
         
-        // MAKING BACKEND AND FRONTEND DIRECTORIES
+        // MAKING BACKEND AND FRONTEND DIRECTORIES PATH
         const backendDir = path.join(baseDir, 'backend');
         const frontendDir = path.join(baseDir, 'frontend');
 
@@ -38,25 +42,14 @@ export async function cloneRepo(repoUrl: string, frontend : string, backend: str
         console.log("FRONTEND CHECK:", frontendCheck);  
         
         if(!fs.existsSync(backendDir) && backendCheck){
-            fs.mkdirSync(backendDir, { recursive: true });
-            console.log("Created backend directories");
-        }else{
-            console.log("Backend folder already exists skipping creation");
+            logger.error("BACKEND WAS NOT CLONED DUE TO GIT ERROR");
         }
         
         if(!fs.existsSync(frontendDir) && frontendCheck){
-            fs.mkdirSync(frontendDir, { recursive: true });
-            console.log("Created frontend directories");
-        }else{
-            console.log("Frontend folder already exists skipping creation");
+            logger.error("FRONTEND WAS NOT CLONED DUE TO GIT ERROR");
         }
 
-        // DOING BUILD OPERATION FOR FRONTEND AND ONLY SERVING THE DIST FOLDER
-
-       const distFolder = await buildFrontend(baseDir);
-       await uploadToS3(distFolder ?? baseDir, projectId);
-        
-        return { projectId, baseDir, backendDir, frontendDir };
+        return { projectId, baseDir, backendDir, frontendDir, cloneSkipped: false };
 
     } catch (error) {
         console.error(`Error cloning ${repoUrl} into ${baseDir}:`, error);

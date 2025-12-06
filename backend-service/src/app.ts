@@ -30,7 +30,7 @@ import operationRouter from "./routes/operational.route.js";
 
 // Routes Forwarding
 app.use("/api/v1/healthcheck", healthCheckRouter)
-app.use("/api/v1/operational", operationRouter)
+app.use("api/v1/operational", operationRouter)
 
 app.use(errorHandler)
 

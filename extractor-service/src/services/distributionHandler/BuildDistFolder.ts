@@ -21,6 +21,7 @@ export async function buildFrontend(baseDir: string) {
     // Run npm install
     try {
         console.log("Installing dependencies...");
+        const distPath = path.join(frontendPath, "dist");
         await asyncExec("npm install", { cwd: frontendPath });
     } catch (err) {
         console.error("Failed npm install:", err);
@@ -30,6 +31,7 @@ export async function buildFrontend(baseDir: string) {
     // Run npm run build
     try {
         console.log("Running build...");
+        const distPath = path.join(frontendPath, "dist");
         await asyncExec("npm run build", { cwd: frontendPath });
     } catch (err) {
         console.error("Failed npm build:", err);

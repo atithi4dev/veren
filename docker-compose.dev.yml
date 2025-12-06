@@ -79,7 +79,35 @@ services:
     networks:
       - veren
 
+  clone-worker:
+    build:
+      context: ./extractor-service
+      dockerfile: Dockerfile.dev
+    container_name: clone-worker
+    command: [ "npm", "run", "clone:worker" ]
+    volumes:
+      - ./extractor-service:/src
+      - extractor_node_modules:/src/node_modules
+      - clones-data:/clones
+    networks:
+      - veren
+    depends_on:
+      - redis
 
+  build-worker:
+    build:
+      context: ./extractor-service
+      dockerfile: Dockerfile.dev
+    container_name: build-worker
+    command: [ "npm", "run", "build:worker" ]
+    volumes:
+      - ./extractor-service:/src
+      - extractor_node_modules:/src/node_modules
+      - clones-data:/clones
+    networks:
+      - veren
+    depends_on:
+      - redis 
   # postgres:
   #   image: postgres:15
   #   container_name: postgres
@@ -91,6 +119,16 @@ services:
   #     - pgdata:/var/lib/postgresql/data
   #   networks:
   #     - veren
+
+  redis:
+    image: redis:7
+    container_name: notification_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - veren
+
 
 volumes:
   api_node_modules:

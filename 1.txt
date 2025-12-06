@@ -1,4 +1,0 @@
-    # ports:
-    #   - "3000:3000"
-    # env_file:
-    #   - ./submission-service/.env
