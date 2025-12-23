@@ -13,7 +13,9 @@ import { env } from "process";
 
 export default async function urlController(req: Request, res: Response) {
   try {
-    const { url,
+    const { 
+      projectName,
+      url,
       pathToFolder,
       repoConfig, 
       token
@@ -24,7 +26,7 @@ export default async function urlController(req: Request, res: Response) {
     if (!url || !token) {
       return res.status(400).json({ success: false, message: "URL and token are required" });
     }
-    const id: string = nanoid(8).toLowerCase();
+    const uid: string = nanoid(8).toLowerCase();
 
     await axios.post(
       "http://extractor-service:3000/api/v1/url",
@@ -32,7 +34,8 @@ export default async function urlController(req: Request, res: Response) {
         url,
         pathToFolder,
         repoConfig,
-        id,
+        // id:projectName? projectName:uid,
+        id:uid,
         token,
       },
       { timeout: 2000 }
@@ -42,7 +45,7 @@ export default async function urlController(req: Request, res: Response) {
 
     return res.json({
       success: true,
-      id,
+      id :projectName? projectName:uid,
       url,
       token,
       message: "URL accepted by submission-service",

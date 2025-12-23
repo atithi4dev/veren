@@ -1,72 +1,84 @@
-A cloud platform to automatically build, deploy, and monitor frontend and backend apps with multi-tenant isolation and CI/CD.
+# VEREN
 
+### Veren is a backend driven deployment system that automates building and deploying application from source repositories using a service-oriented architecture.
 
-ARCHITECTURE
+## Guides -
+[~ Documentation](https://main.veren.site/docs)
+
+[~ API Walkthrough](https://main.veren.site/api-walkthrough)
+
+[~ Fast Setups?](#project-setup)
+
+[~ Buy me a Coffee](https://main.veren.site/cofee)
+
+## Project Setup -
+
+**Clone the repository:**
 
 ```bash
-User
- │
-#  │ Login & submit GitHub URL
- ▼
-API-Gateway
- │
-#  │ Forwards request to Submission-Service
- ▼
-Submission-Service
- │
- │ - Validate GitHub URL
- │ - Check frontend & backend folders
- │ - Check required fields
- │ - Assign unique project ID
- ▼
-Extractor-Service
- ├─ Clone-Worker
-#  │    └─ git clone repo
- └─ Assign-Worker
-      ├─ Generate frontend Dockerfile
-      ├─ Generate vite.config.js
-      ├─ Generate nginx.conf
-      ├─ Generate backend Dockerfile
-      └─ Generate docker-compose.yml
- ▼
-Backend-Service (Orchestrator)
- ├─ **Validate generated Dockerfiles & Compose**
- │     - Ensure frontend & backend builds will succeed
- │     - Catch Node version / dependency mismatches
- ├─ **Build Docker images (frontend & backend)**
- │     - Capture frontend build logs
- │     - Validate that build succeeded before deploying
- ├─ **Deploy containers via Docker Compose**
- │     - Frontend served via Nginx
- │     - Backend exposed internally
- ├─ **Lifecycle tracking**
- │     - Store container IDs, project ID, commit SHA
- │     - Track status: building, running, failed
- │     - Support rollback if deployment fails
- ├─ **Metrics & monitoring**
- │     - CPU, memory usage
- │     - Container health checks
- │     - Log aggregation for frontend & backend
- └─ **CI/CD logic**
-       - Trigger rebuilds on GitHub webhook / new commit
-       - Redeploy containers automatically
- ▼
-Traefik
- │
- │ - Handles routing to frontend containers
- │ - Supports wildcard subdomains per project
- ▼
-Frontend Container(s) (Nginx + React build)
- │
- │ - Serve static build
- │ - React Router fallback for all routes
- │ - Build logs captured for dashboard
-Backend Container(s)
- │
- │ Users access project URL
- ▼
-User sees deployed project
- │
- │ - Can view status, logs, metrics
- │ - Optional: trigger rebuild or rollback
- ```
+git clone <repository-url>
+cd veren
+``` 
+
+We assume you have already gone through the required configuration and added the necessary files as described in [@essentials](https://github.com/atithi4dev/veren/tree/test/api-gateway) before starting the project.
+
+**Start the services using Docker Compose:**
+```bash
+docker compose up --build
+```
+Now you are ready to visit [api-guidelines](https://main.veren.site/docs) to access the differnt routes and supported features. 
+
+## Architecture Overview -
+
+**VEREN** is built as a cloud-native, backend-first deployment platform using a service-oriented architecture:
+
+**API Gateway:** Central entry point for all project and deployment requests.
+
+**Worker Services:** Handle build execution, deployment orchestration, and asynchronous job processing.
+
+**Artifact Storage:** Stores deployment artifacts using cloud storage (S3-compatible).
+
+**Database Layer:** Tracks project metadata, deployment state, and logs.
+
+**Asynchronous Event Flow:** Ensures reliability and observability of deployments across multiple services.
+
+## Contributions -
+This project was originally created as a practice and learning exercise and is not actively maintained long-term by the [@owner](https://github.com/atithi4dev) 
+
+That said, contributions are welcome.
+
+As an aspiring developer, there may be design gaps, edge cases, or implementation issues in the system. If you identify areas for improvement or feel something should be added or refined, feel free to open an issue or submit a pull request.
+
+Reasonable changes and improvements will be reviewed and merged when possible, keeping in mind academic and development commitments.
+
+Please follow the [contribution guidelines](#contribution-guidelines) below when opening issues or submitting PRs.
+
+## Contribution Guidelines - 
+This project is open to help and suggestions rather than strict contributions.
+
+If you notice something that can be improved, simplified, or fixed, feel free to:
+
+Open an issue
+
+Suggest changes
+
+Submit a pull request (even small ones)
+
+There are no strict rules—clarity and intent matter more than perfection.
+Any help or feedback is appreciated
+
+## Support -
+Open an [issue](https://github.com/atithi4dev/veren/issues) on the GitHub repository.
+
+Reach out via [email](atithisingh.dev@gmail.com) or project discussion.
+
+
+</br>
+</br>
+</br>
+</br>
+</br>
+</br>
+</br>
+
+

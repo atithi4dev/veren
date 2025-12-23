@@ -48,6 +48,7 @@ coverage/
 
 # Service-specific sensitive files
 api-gateway/src/postgres.env
+WORKERS/build-worker/.env
 
 # Temp / Runtime folders
 clones/

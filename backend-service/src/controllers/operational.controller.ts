@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { buildQueue } from "../job/queue/build-queue.js";
+import { buildQueue } from "../queue/build-queue.js";
 import { safeExecute } from "../types/safeExecute.js";
 
 export default async function operationalController(req: Request, res: Response) {

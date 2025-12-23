@@ -1,6 +1,6 @@
 
 import { Request, Response } from "express";
-import { cloneQueue } from "../job/queue/clone-queue.js";
+import { cloneQueue } from "../queue/clone-queue.js";
 
 export default async function urlController(req: Request, res: Response) {
   const {

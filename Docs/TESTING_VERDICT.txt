@@ -11,8 +11,8 @@ User / Frontend
      |  - Detect frontend/backend folders (DONE)
      v
 3a. Frontend Build & Deployment
-     |  - Detect React / static 
-     |  - Build (`npm run build`)
+     |  - Detect React / static (Done)
+     |  - Build (`npm run build`) (Done)
      |  - Serve on a simple Node.js or static server
      v
 3b. Backend Build & Deployment
