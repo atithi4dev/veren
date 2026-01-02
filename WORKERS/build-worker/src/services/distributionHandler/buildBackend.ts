@@ -1,41 +1,95 @@
-import { exec } from "child_process";
-import { promisify } from "util";
-import path from "path";
-import fs from "fs/promises";
-import {
-    detectProjectType,
-    detectNodeVersion,
-    detectBuildCommand,
-    readJSON,
-    detectOutputDir,
-    detectInstallCommand
-} from "./detector/detectProjectType";
+import logger from "../../logger/logger.js";
+import dotenv from 'dotenv';
+import { AwsCredentialIdentity } from "@aws-sdk/types";
+import { ECSClient, RunTaskCommand } from "@aws-sdk/client-ecs";
+import {backendECSConfig} from "../../config/ECSconfig.js"
 
-const asyncExec = promisify(exec);
+dotenv.config({
+    path: '../../../.env'
+});
 
-export async function buildBackend(backendDir: string, projectId: string, defaulBackendtbuildCommand: string): Promise<string | null> {
+// Network config in .env
+const SUBNETS = process.env.AWS_SUBNETS?.split(',') || [];
+const SECURITY_GROUPS = process.env.AWS_SECURITY_GROUPS?.split(',') || [];
+if (SUBNETS.length === 0 || SECURITY_GROUPS.length === 0) {
+    throw new Error("Missing subnet or security group configuration in .env");
+}
 
-    const buildVersion = detectNodeVersion(backendDir);
-    const uid = process.getuid?.() ?? 1000;
-    const gid = process.getgid?.() ?? 1000;
+const accessKey = process.env.AWS_ACCESS_KEY_ID;
+const secretKey = process.env.AWS_SECRET_ACCESS_KEY;
 
-    const hostBackendPath = `/var/lib/docker/volumes/veren_clones-data/_data/${projectId}/backend`;
-    const containerName = `backend-builder-${projectId}`;
+if (!accessKey || !secretKey) {
+    throw new Error("Missing AWS credentials");
+}
 
-    const dockerCommand = `
-        docker run --rm \
-        --name ${containerName} \
-        --user ${uid}:${gid} \
-        --memory=2g \
-        --cpus=2 \
-        -v ${hostBackendPath}:/app \
-        dynamic-backend-builder:${buildVersion}} \
-        sh -c "cd /app && npm i && ${defaulBackendtbuildCommand}"
-        `.trim();
+const credentials: AwsCredentialIdentity = {
+    accessKeyId: accessKey,
+    secretAccessKey: secretKey,
+}
 
-    await asyncExec(dockerCommand);
+const ecsClient = new ECSClient({
+    region: "ap-south-1",
+    credentials
+})
 
-    console.log(`Container ${containerName} started for backend build.`);
+export async function buildBackend(
+    url: string, 
+    projectId: string, 
+    backendConfig: any, 
+    deploymentId: string
+): Promise<boolean | null> {
 
-    return containerName;
+    let { backendDir, buildVersion } = backendConfig;
+
+    const envArray = [
+        { name: "GIT_REPOSITORY__URL", value: url },
+        { name: "NODE_VERSION", value: buildVersion },
+        { name: "PROJECT_ID", value: projectId },
+        { name: "DEPLOYMENT_NUMBER", value: deploymentId },
+        { name: "BACKEND_PATH", value: backendDir },
+
+        { name: "ECR_URI", value: process.env.ECR_URI },
+        { name: "AWS_ACCESS_KEY_ID", value: process.env.AWS_ACCESS_KEY_ID },
+        { name: "AWS_SECRET_ACCESS_KEY", value: process.env.AWS_SECRET_ACCESS_KEY },
+        { name: "AWS_REGION", value: process.env.AWS_REGION },
+        { name: "REDIS_PASSWORD", value: process.env.REDIS_PASSWORD },
+        { name: "REDIS_HOSTNAME", value: process.env.REDIS_HOSTNAME },
+        { name: "REDIS_PORT", value: process.env.REDIS_PORT },
+        { name: "REDIS_USERNAME", value: process.env.REDIS_USERNAME },
+    ]   
+
+        const backendCommand = new RunTaskCommand({
+            cluster: backendECSConfig.CLUSTER,
+            taskDefinition: backendECSConfig.TASK,
+            launchType: "FARGATE",
+            count: 1,
+            networkConfiguration: {
+                awsvpcConfiguration: {
+                    assignPublicIp: 'ENABLED',
+                    subnets: SUBNETS,
+                    securityGroups: SECURITY_GROUPS,
+                }
+            },
+            overrides: {
+                containerOverrides: [
+                    {
+                        name: backendECSConfig.CONTAINERNAME,
+                        environment: envArray
+                    }
+                ]
+            }
+        })
+        
+        const resp = await ecsClient.send(backendCommand)
+        
+        if (resp.failures && resp.failures.length > 0) {
+            logger.error("Failed to start ECS task:", resp.failures);
+            return false;
+        }
+        
+        const taskArn = resp.tasks?.[0].taskArn;
+        logger.info("Task started:", taskArn);
+  
+
+    return true;
 }

@@ -1,0 +1,15 @@
+import logger from "../../logger/logger.js";
+
+
+async function safeExecute<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
+    try {
+        return await fn();
+    } catch (error) {
+        logger.error("Caught error in safeExecute", error);
+        return fallback
+    }
+}
+
+export {
+    safeExecute
+}

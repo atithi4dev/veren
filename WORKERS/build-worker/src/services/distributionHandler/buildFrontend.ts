@@ -1,19 +1,9 @@
-import { 
-    detectProjectType, 
-    detectNodeVersion, 
-    detectBuildCommand, 
-    readJSON, 
-    detectOutputDir, 
-    detectInstallCommand 
-} from "./detector/detectProjectType";
-
-import {config18 , config20} from '../../config/ECSconfig'
+import {frontendConfig18 as config18 ,frontendConfig20 as config20} from '../../config/ECSconfig.js'
 import { ECSClient, RunTaskCommand } from "@aws-sdk/client-ecs"
 import { AwsCredentialIdentity } from "@aws-sdk/types";
 
 import dotenv from "dotenv";
-import logger from "../../logger/logger";
-
+import logger from "../../logger/logger.js";
 
 dotenv.config({
      path: '../../../.env'
@@ -42,39 +32,51 @@ const ecsClient = new ECSClient({
   credentials,
 });
 
-// BUILD FRONTEND -----------
-
 export async function buildFrontend(
-    url: string,
-    frontendDir: string,
-    projectId: string,
-    defaulFrontendbuildCommand: string,
-    envs: Object
+   url :string, 
+   projectId: string, 
+   frontendConfig: any, 
+   deploymentId:string
 ): Promise<boolean | null> {
+
+    let {
+        frontendDir, frontendBuildCommand, frontendEnv, buildVersion, frontendInstallCommand, outDir
+    } = frontendConfig;
 
     const envArray = [
         { name: 'GIT_REPOSITORY__URL', value: url },
         { name: 'PROJECT_ID', value: projectId },
+        { name: 'DEPLOYMENT_ID', value: deploymentId },
         { name: 'FRONTENDPATH', value: frontendDir },
-        { name: 'BUILDCOMMAND', value: defaulFrontendbuildCommand },
+        { name: 'BUILDCOMMAND', value: frontendBuildCommand },
+        { name: 'INSTALLCOMMAND', value: frontendInstallCommand },
+        { name: 'FRONTENDOUTPUTDIR', value: outDir },
         { name: 'AWS_ACCESS_KEY_ID', value: process.env.AWS_ACCESS_KEY_ID },
         { name: 'AWS_SECRET_ACCESS_KEY', value: process.env.AWS_SECRET_ACCESS_KEY },
+        { name: "REDIS_PASSWORD", value: process.env.REDIS_PASSWORD },
+        { name: "REDIS_HOST", value: process.env.REDIS_HOSTNAME },
+        { name: "REDIS_PORT", value: process.env.REDIS_PORT },
+        { name: "REDIS_USERNAME", value: process.env.REDIS_USERNAME },
     ]
-
-    if(envs){
-            Object.entries(envs).map(([key, value])=>{
-            if (value !== undefined && value !== null) {
-                envArray.push({ name: key, value });
+                
+    if (Array.isArray(frontendEnv)) {
+        frontendEnv.forEach(({ key, value }) => {
+            if (key && value !== undefined && value !== null) {
+            envArray.push({
+                name: String(key),
+                value: String(value),
+            });
             }
-        })
-    }
-
-    const buildVersion = detectNodeVersion(frontendDir);
-    const buildType = detectProjectType(frontendDir)
-    const InstallCommand = detectInstallCommand(frontendDir, buildType);
-
-    if(!defaulFrontendbuildCommand){
-        defaulFrontendbuildCommand = detectBuildCommand(frontendDir, buildType);
+        });
+    } else if (typeof frontendEnv === "object") {
+        Object.entries(frontendEnv).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+            envArray.push({
+                name: key,
+                value: String(value),
+            });
+            }
+        });
     }
 
     //  ECS ECR S3
@@ -94,14 +96,15 @@ export async function buildFrontend(
             overrides: {
                 containerOverrides: [
                     {
-                        name: config18.IMAGENAME,
+                        name: config18.CONTAINERNAME,
                         environment: envArray
                     }
                 ]
             }
         })
-        await ecsClient.send(command18)
 
+        await ecsClient.send(command18)
+        
     } else if(buildVersion === "20"){
         const command20 = new RunTaskCommand({
             cluster:config20.CLUSTER,
@@ -118,18 +121,22 @@ export async function buildFrontend(
             overrides: {
                 containerOverrides: [
                     {
-                        name: config20.IMAGENAME,
+                        name: config20.CONTAINERNAME,
                         environment: envArray
                     }
                 ]
             }
         })       
+
         const resp = await ecsClient.send(command20)
+
         if (resp.failures && resp.failures.length > 0) {
             logger.error("Failed to start ECS task:", resp.failures);
             return false;
         }
+
         const taskArn = resp.tasks?.[0].taskArn;
+        
         logger.info("Task started:", taskArn);
     }
 
@@ -137,6 +144,7 @@ export async function buildFrontend(
 }
 
 // NON _CLOUD WAY 
+// OR use dockerode
     
     // const hostFrontendPath = `/var/lib/docker/volumes/veren_clones-data/_data/${projectId}/frontend`;
 
@@ -149,7 +157,7 @@ export async function buildFrontend(
     //     -v ${hostFrontendPath}:/app \
     //    ${envFlags} \
     //     dynamic-frontend-builder:${buildVersion}-${buildType} \
-    //     sh -c "cd /app && ${InstallCommand} && ${defaulFrontendbuildCommand}"
+    //     sh -c "cd /app && ${InstallCommand} && ${frontendBuildCommand}"
     //     `.trim();
 
     // await asyncExec(dockerCommand);

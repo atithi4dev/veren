@@ -51,13 +51,16 @@ const helper = async ()=>{
         console.log(`Error connecting to Redis`);
     })
     
+    // backend deployment check
+    subscriber.pSubscribe('backend_builder_logs:*', (message, channel)=>{
+        console.log("CHANNEL : ", channel)
+        console.log("MESSAGE : ", message)
+    })
+    // frontend deployment check
     subscriber.pSubscribe('logs:*', (message, channel)=>{
         console.log("CHANNEL : ", channel)
         console.log("MESSAGE : ", message)
-    console.log("--------")
-    console.log("--------")
-    console.log("--------")
-})
+    })
 }
 helper();
 

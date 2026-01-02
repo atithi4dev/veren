@@ -2,9 +2,10 @@
   "name": "build-worker",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build:worker": "nodemon --watch src --ext ts --exec \"node -r ts-node/register src/workers/build.ts\""
+    "build:worker": "nodemon --watch src --ext ts --exec \"node --loader ts-node/esm src/workers/build.ts\""
   },
   "keywords": [],
   "author": "",

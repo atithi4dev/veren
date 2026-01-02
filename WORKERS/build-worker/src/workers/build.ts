@@ -1,82 +1,70 @@
 import { Worker } from "bullmq";
 import { Redis } from "ioredis";
-import fs from "fs"
-import logger from "../logger/logger";
-import { buildFrontend } from "../services/distributionHandler/buildFrontend";
-import { buildBackend } from "../services/distributionHandler/buildBackend"
+import logger from "../logger/logger.js";
+import { buildFrontend } from "../services/distributionHandler/buildFrontend.js";
+import { buildBackend } from "../services/distributionHandler/buildBackend.js"
 import dotenv from "dotenv";
+import { safeExecute } from "../types/index.js";
 
 dotenv.config({
-     path: '../../.env'
+    path: '../../.env'
 });
 const connection = new Redis({
     maxRetriesPerRequest: null,
-    host: process.env.REDIS_HOST || "internal-redis",
+    host: "internal-redis",
     port: 6379,
 })
 
-async function safeExecute<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
-    try {
-        return await fn();
-    } catch (err) {
-        logger.error("Caught error in safeExecute:", err);
-        return fallback;
-    }
-}
-
 const worker = new Worker('buildQueue',
     async (job) => {
-        const { url,
-            pathToFolder,
-            repoConfig,
-            token,
+        let { url,
             projectId,
-            dirPath,
-            cloneSkipped} = job.data;
-        if(cloneSkipped){
-            return { buildSkipped: true };
-        }
-        if (!projectId || !pathToFolder || !repoConfig) {
-            logger.error("Some data missing in worker of build");
+            deploymentId,
+            frontendConfig,
+            backendConfig,
+        } = job.data;
+
+        if (!projectId) {
+            logger.error("Project Id is not found");
             return { buildSkipped: true };
         }
 
-        let repositoryConfig = JSON.parse(JSON.stringify(repoConfig))
-        let directoryPath = JSON.parse(JSON.stringify(dirPath))
+        frontendConfig = JSON.parse(JSON.stringify(frontendConfig))
+        backendConfig = JSON.parse(JSON.stringify(backendConfig))
 
-        if (!fs.existsSync(directoryPath.baseDir)) {
-            logger.error("Directory do not exist for project: ", projectId);
+        if (!frontendConfig.frontendDir || !backendConfig.backendDir) {
+            logger.error("Directories do not exist for project: ", projectId);
             return { projectId, buildSkipped: true };
         }
 
         // Safe execute buildFrontend
-        const buildDone = await safeExecute(() => buildFrontend(url,directoryPath.frontendDir, projectId, repositoryConfig.buildCommand.FrontendBuildCommand, repositoryConfig.envs.frontendEnv), null);
+        const buildFrontendExecuted = await safeExecute(() => buildFrontend(url, projectId, frontendConfig,deploymentId), null);
 
-        // // safe execute buildBackend
-        // const backendDist = await safeExecute(() => buildFrontend(directoryPath.backendDir, projectId, 
-        // repositoryConfig.buildCommand.BackendBuildCommand, repositoryConfig.envs.backendEnv), null);
+        // Safe execute buildBackend
+        const buildBackendExecuted = await safeExecute(() => buildBackend( url, projectId, backendConfig, deploymentId), null);
 
-        if (!buildDone) {
+        if (!buildFrontendExecuted || !buildBackendExecuted) {
             logger.info(`Build was skipped for project ${projectId}`);
-            return { projectId, dirPath, buildSkipped: true };
+            return { projectId, buildSkipped: true };
         }
-        console.log(`http://${projectId}.localhost:8004/`)
-        return { projectId, dirPath, buildSkipped: false }
+        // TEST DEPLOYMENT
+        logger.info(`http://${projectId}.localhost:8004/`)
+        return { projectId,deploymentId, buildSkipped: false }
 
     }, { connection }
 )
 
 worker.on('completed', async (job, result) => {
     try {
-        const { projectId, dirPath, buildSkipped } = result;
+        const { projectId, buildSkipped } = result;
 
         if (buildSkipped) {
             logger.info(`Build was skipped for project : ${projectId} due to server constraints`);
             return
         }
 
-        if (!projectId || !dirPath) {
-            logger.error("DATA MISSING ON BUILD COMPLETE");
+        if (!projectId) {
+            logger.error("Project Id is missing in build result.");
             return;
         }
 

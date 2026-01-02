@@ -1,12 +1,56 @@
 import { Types } from "mongoose";
 
-interface Project{
-    name: string,
-    createdAt: string,
-    gitUrl: string,
-    subDomain: string,
-    customDomain: string,
-    createdBy: Types.ObjectId
+interface Env {
+    key: string,
+    value: string
 }
 
-export default Project
+interface RuntimeConfig {
+  rType: "static" | "server";
+  port?: number;
+}
+
+interface IProject {
+    _id?: Types.ObjectId;
+
+    name: string,
+
+    git: {
+        provider: "github";
+        repoUrl: string;
+        branch: string;
+        rootDir?: string;
+    }
+    envs: {
+        frontendEnv: Env[],
+        backendEnv: Env[]
+    },
+    repoPath: {
+        frontendDirPath: string;
+        backendDirPath: string;
+    },
+    domains: {
+        subdomain: string;
+        customDomain?: string;
+    }
+    build: {
+        framework?: string;
+        frontendBuildCommand?: string;
+        frontendInstallCommand?: string;
+        backendInstallCommand?: string;
+        frontendOutDir: string;
+
+    }
+    runtime: {
+        frontend: RuntimeConfig;
+        backend: RuntimeConfig;
+    };
+    status: "active" | "paused" | "deleted"
+    deployments: Types.ObjectId[];
+    currentDeployment: Types.ObjectId;
+    createdBy: Types.ObjectId;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export default IProject

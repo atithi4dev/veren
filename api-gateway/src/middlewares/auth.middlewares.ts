@@ -1,27 +1,52 @@
-// import jwt from 'jsonwebtoken'
-// import User from '../models/user.model.js'
-// import ApiError from '../utils/api-utils/ApiError.js'
-// import asynHandler from '../utils/api-utils/asyncHandler.js'
-// import { Request, Response, NextFunction } from 'express'
+import jwt from "jsonwebtoken";
+import User from "../models/user.model.js";
+import ApiError from "../utils/api-utils/ApiError.js";
+import asyncHandler from "../utils/api-utils/asyncHandler.js";
+import { Request, Response, NextFunction } from "express";
 
-// export const verifyJwt = asynHandler(async (req: Request, res: Response, next: NextFunction) => {
-//     const token =
-//         req.cookies?.access_token ||
-//         req.header("Authorization")?.replace("Bearer ", "");
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    provider: string;
+  };
+}
 
-//     if (!token) {
-//         throw new ApiError(401, "Unauthorized")
-//     }
+export const verifyJwt = asyncHandler(
+  async (req: AuthRequest, _res: Response, next: NextFunction) => {
 
-//     const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET
-//     if (!ACCESS_TOKEN_SECRET) {
-//         throw new Error("Access Token is not defined");
-//     }
+    const token =
+      req.cookies?.accessToken ||
+      req.headers.authorization?.split(" ")[1];
+console.log(req.cookies, req.headers)
+    if (!token) {
+      throw new ApiError(401, "No access token provided");
+    }
+console.log(req.cookies, req.headers)
+    const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
+    if (!ACCESS_TOKEN_SECRET) {
+      throw new ApiError(500, "Access token secret not configured");
+    }
 
-//     try {
-//         const decodedToken = jwt.verify(token, ACCESS_TOKEN_SECRET);
+    const payload = jwt.verify(token, ACCESS_TOKEN_SECRET) as {
+      sub: string;
+      provider: string;
+      type: string;
+    };
 
-//     } catch (error) {
-//         console.log(error);
-//     }
-// })
+    if (payload.type !== "access") {
+      throw new ApiError(401, "Invalid token type");
+    }
+
+    const user = await User.findById(payload.sub);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+    console.log(user);
+    req.user = {
+      id: user._id.toString(),
+      provider: user.provider,
+    };
+
+    next();
+  }
+);

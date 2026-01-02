@@ -3,31 +3,21 @@ import { buildQueue } from "../queue/build-queue.js";
 import { safeExecute } from "../types/safeExecute.js";
 
 export default async function operationalController(req: Request, res: Response) {
-
     const {
         url,
-        pathToFolder,
-        repoConfig,
-        token,
         projectId,
-        dirPath,
-        cloneSkipped
+        deploymentId,
+        frontendConfig,
+        backendConfig,
     } = req.body;
 
-    if (cloneSkipped) {
-        console.log("Cloning or assigning was skipped, not queuing build.");
-        return res.json({ msg: "Cloning or assigning was skipped, not queuing build." });
-    }
     await buildQueue.add(
         "buildQueue",
-        {
-            url,
-            pathToFolder,
-            repoConfig,
-            token,
+        {   url,
             projectId,
-            dirPath,
-            cloneSkipped,
+            deploymentId,
+            frontendConfig,
+            backendConfig,
         },
         {
             attempts: 3,

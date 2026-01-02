@@ -1,12 +1,17 @@
-export const config18 = {
-    CLUSTER: process.env.CLUSTER,
+export const frontendConfig18 = {
+    CLUSTER: process.env.AWS_FRONTEND_CLUSTER,
     TASK: process.env.TASK18,
-    IMAGENAME:"builder-image-18"
+    CONTAINERNAME:process.env.FRONTEND18CONTAINER
 }
 
-export const config20 = {
-    CLUSTER: process.env.CLUSTER,
+export const frontendConfig20 = {
+    CLUSTER: process.env.AWS_FRONTEND_CLUSTER,
     TASK: process.env.TASK20,
-    IMAGENAME:"builder-image-20"
+    CONTAINERNAME: process.env.FRONTEND18CONTAINER
 }
 
+export const backendECSConfig = {
+    CLUSTER: process.env.AWS_BACKEND_CLUSTER,
+    TASK: process.env.TASKBACKEND,
+    CONTAINERNAME:process.env.BACKEND_CONTAIENR
+}

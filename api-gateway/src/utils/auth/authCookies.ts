@@ -7,7 +7,7 @@ export default function setAuthCookies(res:Response, accessToken:string, refresh
     httpOnly: true,
     secure: process.env.NODE_ENV === "production", 
     sameSite: "lax",
-    maxAge: 15 * 60 * 1000, // 15 minutes
+    maxAge: ONE_WEEK, 
   });
 
   res.cookie("refreshToken", refreshToken, {

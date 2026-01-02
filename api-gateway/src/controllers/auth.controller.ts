@@ -10,7 +10,6 @@ import User from "../models/user.model.js";
 import ApiResponse from "../utils/api-utils/ApiResponse.js";
 
 // LOGIN CONTROLLER
-
 const LoginController = asyncHandler(async (req: Request, res: Response) => {
     const state = crypto.randomBytes(16).toString("hex");
     req.session.oauthState = state;
@@ -26,8 +25,7 @@ const LoginController = asyncHandler(async (req: Request, res: Response) => {
 })
 
 // CALLBACK CONTROLLER FOR GETTING GITHUB AUTH TOKEN
-
-const CallbackController= asyncHandler(async (req: Request, res: Response) => {
+const CallbackController = asyncHandler(async (req: Request, res: Response) => {
     if (req.query.state !== req.session.oauthState) {
         throw new ApiError(400, "Invalid state")
     }
@@ -73,24 +71,25 @@ const CallbackController= asyncHandler(async (req: Request, res: Response) => {
         console.error(err);
         throw new ApiError(500, "GitHub OAuth Error");
     }
-    
-    const {accessToken, refreshToken} = await githubAuthService(req, githubToken);
-    
-    setAuthCookies(res, accessToken,refreshToken);
+
+    const { accessToken, refreshToken } = await githubAuthService(req, githubToken);
+
+    setAuthCookies(res, accessToken, refreshToken);
 
     req.session.githubToken = githubToken;
 
-    return res.redirect(`${process.env.FRONTEND_URL}/profile`);
+    return res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
 })
 
-const logOutController = asyncHandler(async (req:Request, res:Response)=> {
+// LOGOUT 
+const logOutController = asyncHandler(async (req: Request, res: Response) => {
     // if user is logged in, increment tokenVersion to invalidate old refresh tokens
-    if(req.session.githubToken){
+    if (req.session.githubToken) {
         const githubId = req.session.githubId;
 
-        const user = await User.findOne({githubId: githubId });
+        const user = await User.findOne({ githubId: githubId });
 
-        if(user){
+        if (user) {
             user.tokenVersion = (user.tokenVersion ?? 0) + 1;
             await user.save();
         }
@@ -98,7 +97,7 @@ const logOutController = asyncHandler(async (req:Request, res:Response)=> {
 
     // Destroy session
     req.session.destroy(err => {
-        if(err){
+        if (err) {
             console.error("Error while destroying session: ", err);
         }
     });
@@ -107,7 +106,29 @@ const logOutController = asyncHandler(async (req:Request, res:Response)=> {
     res.clearCookie("accessToken")
     res.clearCookie("refreshToken")
 
-    return res.status(200).json(new ApiResponse(200,{}, "Logged Out" ));
+    return res.status(200).json(new ApiResponse(200, {}, "Logged Out"));
 })
 
-export {LoginController, CallbackController, logOutController}
+const getMe = asyncHandler(async (req: Request, res: Response) => {
+
+    if (!req.user) {
+        return res.status(401).json(
+            new ApiResponse(401, null, "Not authenticated")
+        );
+    }
+    let user = await User.findById(req.user.id).select(
+        "name userName email avatar provider createdAt"
+    );;
+    
+    if (!user) {
+        return res.status(404).json(
+            new ApiResponse(404, null, "User not found")
+        );
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, user, "Fetched user successfully")
+    );
+});
+
+export { LoginController, CallbackController, logOutController, getMe }

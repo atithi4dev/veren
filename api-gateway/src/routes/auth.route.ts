@@ -1,13 +1,16 @@
 import { Router } from "express";
-import { repoHandler } from "../controllers/repo.controller.js";
-import { LoginController, CallbackController } from "../controllers/auth.controller.js"
+import { LoginController, CallbackController, logOutController, getMe } from "../controllers/auth.controller.js"
+import { verifyJwt } from "../middlewares/auth.middlewares.js";
 const router = Router();
 
-//LOGIN ROUTE
-router.get("/github", LoginController);
+//LOGIN ROUTE - Manages both signup and login
+router.get("/login", LoginController);
 
 router.get("/callback",CallbackController)
 
-router.route("/getrepo").get(repoHandler);
+router.get("/logout",logOutController)
+
+router.get("/me", verifyJwt,getMe)
+
 
 export default router;

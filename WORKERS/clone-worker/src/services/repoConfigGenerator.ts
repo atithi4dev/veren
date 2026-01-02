@@ -1,0 +1,64 @@
+import { generatedConfig, RepoConfig } from '../types/clone.js'
+import {
+    detectProjectType,
+    detectNodeVersion,
+    detectBuildCommand,
+    detectInstallCommand
+} from "./detector/detectProjectType.js";
+
+interface DirPath {
+    frontendDirPath: string;
+    backendDirPath: string;
+}
+interface Build {
+    framework?: string;
+    frontendBuildCommand?: string;
+    backendBuildCommand?: string;
+    frontendInstallCommand?: string;
+    backendInstallCommand?: string;
+    frontendOutDir: string;
+}
+
+const repoConfigGenerator = async (dirPath: DirPath, build: Build, frontendDir: string, backendDir: string): Promise<RepoConfig> => {
+
+    const { frontendDirPath, backendDirPath } = dirPath;
+    let { frontendBuildCommand, backendBuildCommand, frontendInstallCommand, backendInstallCommand, frontendOutDir } = build;
+
+    const frontendBuildVersion = detectNodeVersion(frontendDirPath);
+    const backendBuildVersion = detectNodeVersion(backendDirPath);
+    const buildType = detectProjectType(frontendDirPath)
+    
+    if (!frontendBuildCommand) {
+        frontendBuildCommand = detectBuildCommand(frontendDirPath, buildType);
+    }
+    if(!frontendInstallCommand){
+        frontendInstallCommand = detectInstallCommand(frontendDirPath, buildType);
+    }
+
+    if(!backendInstallCommand){
+        backendInstallCommand = "npm install"
+    }
+
+    let frontendConfig = {
+        frontendDir: frontendDirPath,
+        buildVersion: frontendBuildVersion,
+        buildType,
+        frontendBuildCommand,
+        frontendInstallCommand,
+        outDir: frontendDir
+    }
+
+
+    const backendConfig = {
+        backendDir: backendDirPath,
+        backendInstallCommand,
+        buildVersion: backendBuildVersion
+    };
+
+    return {
+        frontendConfig, backendConfig, frontendDir,
+        backendDir, isConfig: true
+    }
+}
+
+export default repoConfigGenerator;
