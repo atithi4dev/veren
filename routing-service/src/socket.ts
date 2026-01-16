@@ -8,7 +8,3 @@ export const subscriber = redis.createClient({
     port: Number(process.env.REDIS_PORT)
   }
 })
-
-
-
-

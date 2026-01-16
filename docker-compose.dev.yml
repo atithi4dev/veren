@@ -13,20 +13,20 @@ services:
     depends_on:
       - internal-redis
 
-  submission-service:
-    build:
-      context: ./submission-service
-      dockerfile: Dockerfile.dev
-    container_name: submission-service
-    volumes:
-      - ./submission-service:/src
-    ports:
-      - "8002:3000"
-    env_file:
-      - ./submission-service/.env
-    command: [ "npm", "run", "dev" ]
-    networks:
-      - veren
+  # submission-service:
+  #   build:
+  #     context: ./submission-service
+  #     dockerfile: Dockerfile.dev
+  #   container_name: submission-service
+  #   volumes:
+  #     - ./submission-service:/src
+  #   ports:
+  #     - "8002:3000"
+  #   env_file:
+  #     - ./submission-service/.env
+  #   command: [ "npm", "run", "dev" ]
+  #   networks:
+  #     - veren
 
   extractor-service:
     build:
@@ -61,6 +61,33 @@ services:
       - ./routing-service/.env
     command: [ "npm", "run", "dev" ]
     networks:
+      - veren 
+  orchestrate-service:
+    build:
+      context: ./orchestrate-service
+      dockerfile: Dockerfile.dev
+    container_name: orchestrate-service
+    volumes:
+      - ./orchestrate-service:/src
+    ports:
+      - "8005:3000"
+    env_file:
+      - ./orchestrate-service/.env
+    command: [ "npm", "run", "dev" ]
+    networks:
+      - veren  
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile.dev
+    container_name: notification-service
+    volumes:
+      - ./notification-service:/src
+    ports:
+      - "8007:3000"
+    env_file:
+      - ./notification-service/.env
+    networks:
       - veren
 
   backend-service:
@@ -72,7 +99,7 @@ services:
       - ./backend-service:/src
       - clones-data:/src/src/clones
     ports:
-      - "8005:3000"
+      - "8006:3000"
     env_file:
       - ./backend-service/.env
     command: [ "npm", "run", "dev"]
@@ -85,7 +112,6 @@ services:
     build:
       context: ./WORKERS/clone-worker
       dockerfile: Dockerfile.dev
-    container_name: clone-worker
     command: [ "npm", "run", "clone:worker" ]
     volumes:
       - ./WORKERS/clone-worker:/src
@@ -102,7 +128,6 @@ services:
       context: ./WORKERS/build-worker
       dockerfile: Dockerfile
     privileged: true
-    container_name: build-worker
     volumes:
       - ./WORKERS/build-worker:/src
       - /var/run/docker.sock:/var/run/docker.sock
@@ -113,35 +138,6 @@ services:
       - veren
     depends_on:
       - internal-redis
-
-  # assign-worker:
-  #   build:
-  #     context: ./extractor-service
-  #     dockerfile: Dockerfile.dev
-  #   container_name: assign-worker
-  #   command: [ "npm", "run", "assign:worker" ]
-  #   volumes:
-  #     - ./extractor-service:/src
-  #     - clones-data:/src/src/clones
-  #     - ./extractor-service/src/services/assignFile/public:/src/src/services/assignFile/public
-  #   env_file:
-  #     - ./extractor-service/.env
-  #   networks:
-  #     - veren
-  #   depends_on:
-  #     - internal-redis
-
-  # postgres:
-  #   image: postgres:15
-  #   container_name: postgres
-  #   ports:
-  #     - "5432:5432"
-  #   env_file:
-  #     - ./api-gateway/postgres.env
-  #   volumes:
-  #     - pgdata:/var/lib/postgresql/data
-  #   networks:
-  #     - veren
 
   internal-redis:
     image: redis:7

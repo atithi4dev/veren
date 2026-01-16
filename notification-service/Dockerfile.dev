@@ -1,0 +1,21 @@
+FROM node:20-bullseye
+
+WORKDIR /app
+
+COPY package*.json ./
+COPY tsconfig.json ./
+COPY kafka.pem kafka.pem
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+# Compile TypeScript to JS
+RUN npm run build
+
+# Expose the port
+EXPOSE 3000
+
+# Run compiled JS
+CMD ["npm", "start"]
