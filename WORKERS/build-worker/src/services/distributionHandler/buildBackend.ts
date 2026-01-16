@@ -2,7 +2,7 @@ import logger from "../../logger/logger.js";
 import dotenv from 'dotenv';
 import { AwsCredentialIdentity } from "@aws-sdk/types";
 import { ECSClient, RunTaskCommand } from "@aws-sdk/client-ecs";
-import {backendECSConfig} from "../../config/ECSconfig.js"
+import { backendECSConfig } from "../../config/ECSconfig.js"
 
 dotenv.config({
     path: '../../../.env'
@@ -32,12 +32,17 @@ const ecsClient = new ECSClient({
     credentials
 })
 
+type BuildReturn = {
+    status: boolean,
+    taskArn: string
+}
+
 export async function buildBackend(
-    url: string, 
-    projectId: string, 
-    backendConfig: any, 
+    url: string,
+    projectId: string,
+    backendConfig: any,
     deploymentId: string
-): Promise<boolean | null> {
+): Promise<BuildReturn> {
 
     let { backendDir, buildVersion } = backendConfig;
 
@@ -45,7 +50,7 @@ export async function buildBackend(
         { name: "GIT_REPOSITORY__URL", value: url },
         { name: "NODE_VERSION", value: buildVersion },
         { name: "PROJECT_ID", value: projectId },
-        { name: "DEPLOYMENT_NUMBER", value: deploymentId },
+        { name: "DEPLOYMENTID", value: deploymentId },
         { name: "BACKEND_PATH", value: backendDir },
 
         { name: "ECR_URI", value: process.env.ECR_URI },
@@ -56,40 +61,44 @@ export async function buildBackend(
         { name: "REDIS_HOSTNAME", value: process.env.REDIS_HOSTNAME },
         { name: "REDIS_PORT", value: process.env.REDIS_PORT },
         { name: "REDIS_USERNAME", value: process.env.REDIS_USERNAME },
-    ]   
+    ]
 
-        const backendCommand = new RunTaskCommand({
-            cluster: backendECSConfig.CLUSTER,
-            taskDefinition: backendECSConfig.TASK,
-            launchType: "FARGATE",
-            count: 1,
-            networkConfiguration: {
-                awsvpcConfiguration: {
-                    assignPublicIp: 'ENABLED',
-                    subnets: SUBNETS,
-                    securityGroups: SECURITY_GROUPS,
-                }
-            },
-            overrides: {
-                containerOverrides: [
-                    {
-                        name: backendECSConfig.CONTAINERNAME,
-                        environment: envArray
-                    }
-                ]
+    const backendCommand = new RunTaskCommand({
+        cluster: backendECSConfig.CLUSTER,
+        taskDefinition: backendECSConfig.TASK,
+        launchType: "FARGATE",
+        count: 1,
+        networkConfiguration: {
+            awsvpcConfiguration: {
+                assignPublicIp: 'ENABLED',
+                subnets: SUBNETS,
+                securityGroups: SECURITY_GROUPS,
             }
-        })
-        
-        const resp = await ecsClient.send(backendCommand)
-        
-        if (resp.failures && resp.failures.length > 0) {
-            logger.error("Failed to start ECS task:", resp.failures);
-            return false;
+        },
+        overrides: {
+            containerOverrides: [
+                {
+                    name: backendECSConfig.CONTAINERNAME,
+                    environment: envArray
+                }
+            ]
         }
-        
-        const taskArn = resp.tasks?.[0].taskArn;
-        logger.info("Task started:", taskArn);
-  
+    })
 
-    return true;
+    const resp = await ecsClient.send(backendCommand)
+    if (resp.failures && resp.failures.length > 0) {
+        logger.error("Failed to start ECS task:", resp.failures);
+        return {
+            status: false,
+            taskArn: ''
+        };
+    }
+
+    const taskArn = resp.tasks?.[0].taskArn;
+    logger.info("Task started:", taskArn);
+
+    return {
+        status: true,
+        taskArn: taskArn!
+    };
 }

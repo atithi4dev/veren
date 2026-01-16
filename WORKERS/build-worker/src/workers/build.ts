@@ -5,6 +5,7 @@ import { buildFrontend } from "../services/distributionHandler/buildFrontend.js"
 import { buildBackend } from "../services/distributionHandler/buildBackend.js"
 import dotenv from "dotenv";
 import { safeExecute } from "../types/index.js";
+import axios from "axios";
 
 dotenv.config({
     path: '../../.env'
@@ -38,25 +39,28 @@ const worker = new Worker('buildQueue',
         }
 
         // Safe execute buildFrontend
-        const buildFrontendExecuted = await safeExecute(() => buildFrontend(url, projectId, frontendConfig,deploymentId), null);
+        const buildFrontendExecuted = await safeExecute(() => buildFrontend(url, projectId, frontendConfig, deploymentId), { status: false, taskArn: "" });
 
         // Safe execute buildBackend
-        const buildBackendExecuted = await safeExecute(() => buildBackend( url, projectId, backendConfig, deploymentId), null);
+        const buildBackendExecuted = await safeExecute(() => buildBackend(url, projectId, backendConfig, deploymentId), { status: false, taskArn: "" });
 
-        if (!buildFrontendExecuted || !buildBackendExecuted) {
+        if (!buildFrontendExecuted.status || !buildBackendExecuted.status) {
             logger.info(`Build was skipped for project ${projectId}`);
             return { projectId, buildSkipped: true };
         }
+
+        const FrontendtaskArn = buildFrontendExecuted.taskArn;
+        const BackendtaskArn = buildBackendExecuted.taskArn;
         // TEST DEPLOYMENT
         logger.info(`http://${projectId}.localhost:8004/`)
-        return { projectId,deploymentId, buildSkipped: false }
+        return { projectId, deploymentId, FrontendtaskArn, BackendtaskArn, buildSkipped: false }
 
     }, { connection }
 )
 
 worker.on('completed', async (job, result) => {
     try {
-        const { projectId, buildSkipped } = result;
+        const { projectId, deploymentId, FrontendtaskArn, BackendtaskArn, buildSkipped } = result;
 
         if (buildSkipped) {
             logger.info(`Build was skipped for project : ${projectId} due to server constraints`);
@@ -67,6 +71,20 @@ worker.on('completed', async (job, result) => {
             logger.error("Project Id is missing in build result.");
             return;
         }
+        if (!deploymentId || !FrontendtaskArn || !BackendtaskArn) {
+            logger.error("Deployment failed");
+            return;
+        }
+
+        await safeExecute(
+            () => Promise.resolve(axios.patch(
+                `http://api-gateway:3000/api/v1/internal/${projectId}/build-metadata`,
+                {
+                    projectId, deploymentId, FrontendtaskArn, BackendtaskArn
+                },
+                { timeout: 10000 })),
+            null
+        );
 
         logger.info(`Job ${job.id} completed successfully`);
 
@@ -86,7 +104,3 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason) => {
     logger.error("Unhandled promise rejection in worker:", reason);
 });
-
-
-
-
