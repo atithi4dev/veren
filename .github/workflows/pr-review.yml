@@ -138,13 +138,24 @@ jobs:
           script: |
             const pr = context.payload.pull_request;
             const targetBranch = pr.base.ref;
+            const prAuthor = pr.user.login;
             
             if (targetBranch === 'main') {
+              // AUTHORIZATION: Only repository owner allowed
+              const repoOwner = context.repo.owner;
+              const isOwner = prAuthor.toLowerCase() === repoOwner.toLowerCase();
+              
+              if (isOwner) {
+                console.log(`✅ Repository owner @${prAuthor} can merge to main`);
+                return; // Skip the warning for repository owner
+              }
+              
+              // Block all non-owner users
               github.rest.issues.createComment({
                 issue_number: pr.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: '🚫 **Branch Protection:** This PR targets `main`. All changes must go through the `test` branch first.\n\n**Action Required:**\n1. Close this PR\n2. Create a new PR targeting the `test` branch\n3. Once merged to `test`, create a release PR from `test` to `main`\n\nSee [CONTRIBUTING.md](../../CONTRIBUTING.md) for details.'
+                body: `🚫 **Branch Protection:** This PR targets \`main\`. All changes must go through the \`test\` branch first.\n\n**Action Required:**\n1. Close this PR\n2. Create a new PR targeting the \`test\` branch\n3. Once merged to \`test\`, create a release PR from \`test\` to \`main\`\n\n**Note:** Only the repository owner (@${repoOwner}) can create PRs to \`main\`.\n\nSee [CONTRIBUTING.md](../../Docs/CONTRIBUTING.md) for details.`
               });
             }
 

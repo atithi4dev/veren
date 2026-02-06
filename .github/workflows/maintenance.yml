@@ -234,6 +234,6 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: '🔒 Security: Dependency Vulnerabilities Detected',
-              body: '⚠️ **Automated Security Alert**\n\nDependency vulnerabilities have been detected in the latest scan.\n\n**Action Required:**\n1. Run `npm audit` to see details\n2. Run `npm audit fix` for automatic fixes\n3. Review high/critical vulnerabilities\n4. Create PR to fix issues\n\nSee [SECURITY.md](../.github/SECURITY.md) for guidelines.',
+              body: '⚠️ **Automated Security Alert**\n\nDependency vulnerabilities have been detected in the latest scan.\n\n**Action Required:**\n1. Run `npm audit` to see details\n2. Run `npm audit fix` for automatic fixes\n3. Review high/critical vulnerabilities\n4. Create PR to fix issues\n\nSee [SECURITY.md](../SECURITY.md) for guidelines.',
               labels: ['security', 'priority-high']
             });

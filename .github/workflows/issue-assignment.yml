@@ -31,7 +31,7 @@ jobs:
             }
             
             // AUTHORIZATION CHECK: Only owner or specific maintainer can assign
-            const AUTHORIZED_ASSIGNERS = ['codewithatith']; // Add more maintainers here
+            const AUTHORIZED_ASSIGNERS = ['atithi4dev']; // Add more maintainers here
             const repoOwner = context.repo.owner;
             
             // Check if commenter is authorized (owner or in the authorized list)

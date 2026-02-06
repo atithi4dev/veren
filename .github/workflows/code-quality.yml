@@ -151,7 +151,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '🔒 **Security Audit:** Dependencies have been checked for known vulnerabilities. Address any critical or high-severity issues before merge. See [SECURITY.md](../.github/SECURITY.md) for guidelines.'
+              body: '🔒 **Security Audit:** Dependencies have been checked for known vulnerabilities. Address any critical or high-severity issues before merge. See [SECURITY.md](../SECURITY.md) for guidelines.'
             });
 
   build-check:

@@ -12,16 +12,37 @@ jobs:
     steps:
       - name: Check PR Target Branch
         if: github.base_ref == 'main'
-        run: |
-          echo "❌ ERROR: Direct PRs to 'main' are not allowed!"
-          echo "📌 Please create a PR against the 'test' branch instead."
-          echo ""
-          echo "How to fix:"
-          echo "1. Close this PR"
-          echo "2. Create a new PR targeting 'test' branch instead"
-          echo ""
-          echo "Reason: All changes must go through 'test' branch first for testing before merging to 'main'."
-          exit 1
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const prAuthor = pr.user.login;
+            const repoOwner = context.repo.owner;
+            
+            // AUTHORIZATION: Only repository owner can create PRs to main
+            const isOwner = prAuthor.toLowerCase() === repoOwner.toLowerCase();
+            
+            if (isOwner) {
+              console.log(`✅ Repository owner @${prAuthor} can create PRs to main branch`);
+              await github.rest.issues.createComment({
+                issue_number: pr.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `✅ **Authorized Release PR** - @${prAuthor} (repository owner) is authorized to merge to \`main\`.\n\n⚠️ **Important:** Ensure this has been tested in \`test\` branch first!`
+              });
+              return;
+            }
+            
+            // Block all non-owner users
+            await github.rest.issues.createComment({
+              issue_number: pr.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚫 **Branch Protection:** This PR targets \`main\`. All changes must go through the \`test\` branch first.\n\n**Action Required:**\n1. Close this PR\n2. Create a new PR targeting the \`test\` branch\n3. Once merged to \`test\`, create a release PR from \`test\` to \`main\`\n\n**Note:** Only the repository owner (@${repoOwner}) can create PRs directly to \`main\`.\n\nSee [CONTRIBUTING.md](../../Docs/CONTRIBUTING.md) for details.`
+            });
+            core.setFailed('Unauthorized PR to main branch');
+            process.exit(1);
 
       - name: Check PR Branch Naming Convention
         if: github.head_ref != null
