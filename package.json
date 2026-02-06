@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "workspaces": [
+    "api-gateway",
+    "WORKERS/clone-worker",
+    "WORKERS/build-worker",
+    "packages/*"
+  ]
+}

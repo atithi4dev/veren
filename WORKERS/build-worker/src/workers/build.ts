@@ -1,100 +1,183 @@
-import { Worker } from "bullmq";
+import { Job, Worker } from "bullmq";
 import { Redis } from "ioredis";
+import dotenv from "dotenv";
+
 import logger from "../logger/logger.js";
 import { buildFrontend } from "../services/distributionHandler/buildFrontend.js";
 import { buildBackend } from "../services/distributionHandler/buildBackend.js"
-import dotenv from "dotenv";
 import { safeExecute } from "../types/index.js";
-import axios from "axios";
 
-dotenv.config({
-    path: '../../.env'
-});
+import { DeploymentStatus, publilishEvent } from '@veren/domain'
+import { BuildJobError } from "../utils/buildError.js";
+
+dotenv.config({ path: "../../.env" });
+
+/* ---------------- TYPES ---------------- */
+
+interface BuildJobData {
+    url: string;
+    projectId: string;
+    deploymentId: string;
+    frontendConfig: any;
+    backendConfig: any;
+}
+interface BuildJobResult {
+    projectId: string,
+    deploymentId: string,
+    FrontendtaskArn: string,
+    BackendtaskArn: string
+}
+
+/* ---------------- REDIS ---------------- */
+
 const connection = new Redis({
     maxRetriesPerRequest: null,
     host: "internal-redis",
     port: 6379,
 })
 
-const worker = new Worker('buildQueue',
-    async (job) => {
+/* ---------------- WORKER ----------------  */
+
+const worker = new Worker<BuildJobData, BuildJobResult>('buildQueue',
+    async (job: Job<BuildJobData>) => {
         let { url,
             projectId,
             deploymentId,
             frontendConfig,
             backendConfig,
         } = job.data;
+        try {
 
-        if (!projectId) {
-            logger.error("Project Id is not found");
-            return { buildSkipped: true };
+            if (!projectId || !deploymentId) {
+                throw new BuildJobError("Missing identifiers", {
+                    msg: "projectId or deploymentId missing",
+                    metadata: { projectId, deploymentId },
+                    source: "INTERNAL",
+                });
+            }
+
+            frontendConfig = JSON.parse(JSON.stringify(frontendConfig))
+            backendConfig = JSON.parse(JSON.stringify(backendConfig))
+
+            if (!frontendConfig || !backendConfig) {
+                throw new BuildJobError("Missing build configs", {
+                    msg: "frontendConfig or backendConfig missing",
+                    metadata: { projectId, deploymentId },
+                    source: "INTERNAL",
+                });
+            }
+
+            if (!frontendConfig.frontendDir || !backendConfig.backendDir) {
+                throw new BuildJobError("Invalid directories", {
+                    msg: "frontendDir or backendDir missing",
+                    metadata: { projectId, deploymentId },
+                    source: "INTERNAL",
+                });
+            }
+            /* ---------- BUILD FRONTEND ---------- */
+
+            const frontendResult = await safeExecute(
+                () => buildFrontend(url, projectId, frontendConfig, deploymentId),
+                { status: false, taskArn: "" }
+            );
+
+            if (!frontendResult.status) {
+                throw new BuildJobError("FRONTEND_BUILT_FAILED", {
+                    msg: "buildFrontend execution failed",
+                    metadata: { projectId, deploymentId },
+                    source: "BUILD",
+                });
+            }
+
+            // Safe execute buildBackend
+            /* ---------- BUILD BACKEND ---------- */
+
+            const backendResult = await safeExecute(
+                () => buildBackend(url, projectId, backendConfig, deploymentId),
+                { status: false, taskArn: "" }
+            );
+
+            if (!backendResult.status) {
+                throw new BuildJobError("BACKEND_BUILT_FAILED", {
+                    msg: "buildBackend execution failed",
+                    metadata: { projectId, deploymentId },
+                    source: "BUILD",
+                });
+            }
+            /* ---------- SUCCESS ---------- */
+
+            return {
+                projectId,
+                deploymentId,
+                FrontendtaskArn: frontendResult.taskArn,
+                BackendtaskArn: backendResult.taskArn,
+            };
+        } catch (error) {
+            logger.error("Build worker execution failed", {
+                jobId: job.id,
+                error
+            })
+            throw error;
         }
+    }
 
-        frontendConfig = JSON.parse(JSON.stringify(frontendConfig))
-        backendConfig = JSON.parse(JSON.stringify(backendConfig))
-
-        if (!frontendConfig.frontendDir || !backendConfig.backendDir) {
-            logger.error("Directories do not exist for project: ", projectId);
-            return { projectId, buildSkipped: true };
-        }
-
-        // Safe execute buildFrontend
-        const buildFrontendExecuted = await safeExecute(() => buildFrontend(url, projectId, frontendConfig, deploymentId), { status: false, taskArn: "" });
-
-        // Safe execute buildBackend
-        const buildBackendExecuted = await safeExecute(() => buildBackend(url, projectId, backendConfig, deploymentId), { status: false, taskArn: "" });
-
-        if (!buildFrontendExecuted.status || !buildBackendExecuted.status) {
-            logger.info(`Build was skipped for project ${projectId}`);
-            return { projectId, buildSkipped: true };
-        }
-
-        const FrontendtaskArn = buildFrontendExecuted.taskArn;
-        const BackendtaskArn = buildBackendExecuted.taskArn;
-        // TEST DEPLOYMENT
-        logger.info(`http://${projectId}.localhost:8004/`)
-        return { projectId, deploymentId, FrontendtaskArn, BackendtaskArn, buildSkipped: false }
-
-    }, { connection }
+    , { connection }
 )
 
+/* ---------------- EVENTS ---------------- */
+
 worker.on('completed', async (job, result) => {
-    try {
-        const { projectId, deploymentId, FrontendtaskArn, BackendtaskArn, buildSkipped } = result;
+    const { projectId, deploymentId, FrontendtaskArn, BackendtaskArn } = result;
 
-        if (buildSkipped) {
-            logger.info(`Build was skipped for project : ${projectId} due to server constraints`);
-            return
-        }
-
-        if (!projectId) {
-            logger.error("Project Id is missing in build result.");
-            return;
-        }
-        if (!deploymentId || !FrontendtaskArn || !BackendtaskArn) {
-            logger.error("Deployment failed");
-            return;
-        }
-
-        await safeExecute(
-            () => Promise.resolve(axios.patch(
-                `http://api-gateway:3000/api/v1/internal/${projectId}/build-metadata`,
-                {
-                    projectId, deploymentId, FrontendtaskArn, BackendtaskArn
-                },
-                { timeout: 10000 })),
-            null
-        );
-
-        logger.info(`Job ${job.id} completed successfully`);
-
-    } catch (error) {
-        logger.error("Error in completed handler:", error);
-    }
-})
+    publilishEvent({
+        type: DeploymentStatus.BUILD_QUEUE_SUCCESS,
+        projectId: result.projectId,
+        deploymentId: result.deploymentId,
+        payload: {
+            frontendTaskArn: result.FrontendtaskArn,
+            backendTaskArn: result.BackendtaskArn,
+        },
+    });
+});
 
 worker.on('failed', async (job: any, err: any) => {
-    logger.error(`JOB FAILED WITH ${job.id}`, err);
+    logger.error("Build job failed", {
+        jobId: job?.id,
+        err,
+    });
+    if (err instanceof BuildJobError) {
+        if (err.message == "BACKEND_BUILT_FAILED") {
+            publilishEvent({
+                type: DeploymentStatus.BACKEND_QUEUE_FAILED,
+                projectId: job?.data?.projectId!,
+                deploymentId: job?.data?.deploymentId!,
+                payload: err.payload,
+            });
+        } else if (err.message == "FRONTEND_BUILT_FAILED") {
+            publilishEvent({
+                type: DeploymentStatus.FRONTEND_QUEUE_FAILED,
+                projectId: job?.data?.projectId!,
+                deploymentId: job?.data?.deploymentId!,
+                payload: err.payload,
+            });
+        } else {
+            publilishEvent({
+                type: DeploymentStatus.BUILD_UNKNOWN_FAILURE,
+                projectId: job?.data?.projectId!,
+                deploymentId: job?.data?.deploymentId!,
+                payload: err.payload,
+            });
+        }
+    } else {
+        publilishEvent({
+            type: DeploymentStatus.INTERNAL_ERROR,
+            projectId: job?.data?.projectId!,
+            deploymentId: job?.data?.deploymentId!,
+            payload: {
+                msg: "Unexpected build worker crash",
+            },
+        });
+    }
 })
 
 process.on('uncaughtException', (err) => {

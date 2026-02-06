@@ -22,6 +22,7 @@
     "axios": "^1.13.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "dockerode": "^4.0.9",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "morgan": "^1.10.1",
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
+    "@types/dockerode": "^4.0.1",
     "@types/express": "^5.0.6",
     "nodemon": "^3.1.11"
   }

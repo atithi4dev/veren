@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { AwsCredentialIdentity } from "@aws-sdk/types";
 import { ECSClient, RunTaskCommand } from "@aws-sdk/client-ecs";
 import { backendECSConfig } from "../../config/ECSconfig.js"
+import { DeploymentStatus, publilishEvent } from "@veren/domain";
 
 dotenv.config({
     path: '../../../.env'
@@ -57,10 +58,12 @@ export async function buildBackend(
         { name: "AWS_ACCESS_KEY_ID", value: process.env.AWS_ACCESS_KEY_ID },
         { name: "AWS_SECRET_ACCESS_KEY", value: process.env.AWS_SECRET_ACCESS_KEY },
         { name: "AWS_REGION", value: process.env.AWS_REGION },
-        { name: "REDIS_PASSWORD", value: process.env.REDIS_PASSWORD },
-        { name: "REDIS_HOSTNAME", value: process.env.REDIS_HOSTNAME },
-        { name: "REDIS_PORT", value: process.env.REDIS_PORT },
-        { name: "REDIS_USERNAME", value: process.env.REDIS_USERNAME },
+
+        { name: "KAFKA_CLIENT_ID", value: process.env.KAFKA_CLIENT_ID },
+        { name: "KAFKA_BROKER1", value: process.env.KAFKA_BROKER1 },
+        { name: "KAFKA_SASL_USERNAME", value: process.env.KAFKA_SASL_USERNAME },
+        { name: "KAFKA_SASL_PASSWORD", value: process.env.KAFKA_SASL_PASSWORD },
+        { name: "DOMAIN_EVENTS_TOPIC_ARN", value: process.env.DOMAIN_EVENTS_TOPIC_ARN }
     ]
 
     const backendCommand = new RunTaskCommand({
@@ -87,7 +90,16 @@ export async function buildBackend(
 
     const resp = await ecsClient.send(backendCommand)
     if (resp.failures && resp.failures.length > 0) {
-        logger.error("Failed to start ECS task:", resp.failures);
+        publilishEvent({
+            type: DeploymentStatus.INTERNAL_ERROR,
+            projectId,
+            deploymentId,
+            payload: {
+                commandType: backendCommand,
+                resFailure: resp.failures,
+                msg: "Failed to start ECS task"
+            },
+        });
         return {
             status: false,
             taskArn: ''

@@ -5,6 +5,11 @@ export async function folderCheck(repoUrl: string, path: string, branch = "main"
         const [owner, repo] = url.pathname.replace(/^\/|\.git$/g, "").split("/");
 
         if (!owner || !repo) throw new Error("Invalid GitHub repo URL");
+        
+        if(path.includes('./')){
+            path = path.split('./')[1];
+        }
+
         const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
 
         const headers: any = { Accept: "application/vnd.github.v3+json" };

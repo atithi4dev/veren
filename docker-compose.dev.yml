@@ -1,47 +1,15 @@
 services:
   api-gateway:
     build:
-      context: ./api-gateway
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: ./api-gateway/Dockerfile.dev
     container_name: api-gateway
     ports:
       - "8001:3000"
     env_file:
       - ./api-gateway/.env
-    networks:
-      - veren
-    depends_on:
-      - internal-redis
-
-  # submission-service:
-  #   build:
-  #     context: ./submission-service
-  #     dockerfile: Dockerfile.dev
-  #   container_name: submission-service
-  #   volumes:
-  #     - ./submission-service:/src
-  #   ports:
-  #     - "8002:3000"
-  #   env_file:
-  #     - ./submission-service/.env
-  #   command: [ "npm", "run", "dev" ]
-  #   networks:
-  #     - veren
-
-  extractor-service:
-    build:
-      context: ./extractor-service
-      dockerfile: Dockerfile.dev
-    container_name: extractor-service
     volumes:
-      - ./extractor-service:/src
-      - clones-data:/src/src/clones
-      - ./extractor-service/clones:/src/src/clones
-    ports:
-      - "8003:3000"
-    env_file:
-      - ./extractor-service/.env
-    command: [ "npm", "run", "dev" ]
+      - ./packages/domain:/app/packages/domain
     networks:
       - veren
     depends_on:
@@ -90,32 +58,12 @@ services:
     networks:
       - veren
 
-  backend-service:
-    build:
-      context: ./backend-service
-      dockerfile: Dockerfile.dev
-    container_name: backend-service
-    volumes:
-      - ./backend-service:/src
-      - clones-data:/src/src/clones
-    ports:
-      - "8006:3000"
-    env_file:
-      - ./backend-service/.env
-    command: [ "npm", "run", "dev"]
-    networks:
-      - veren
-    depends_on:
-      - internal-redis
-
   clone-worker:
     build:
-      context: ./WORKERS/clone-worker
-      dockerfile: Dockerfile.dev
-    command: [ "npm", "run", "clone:worker" ]
+      context: .
+      dockerfile: ./WORKERS/clone-worker/Dockerfile
     volumes:
-      - ./WORKERS/clone-worker:/src
-      - clones-data:/src/src/clones
+      - clones-data:/src/clone-worker/src/clones
     env_file:
       - ./WORKERS/clone-worker/.env
     networks:
@@ -125,13 +73,12 @@ services:
 
   build-worker:
     build:
-      context: ./WORKERS/build-worker
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./WORKERS/build-worker/Dockerfile
     privileged: true
     volumes:
-      - ./WORKERS/build-worker:/src
       - /var/run/docker.sock:/var/run/docker.sock
-      - clones-data:/src/src/clones
+      - clones-data:/src/build-worker/src/clones
     env_file:
       - ./WORKERS//build-worker/.env
     networks:

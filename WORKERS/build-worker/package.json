@@ -4,19 +4,22 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build:worker": "nodemon --watch src --ext ts --exec \"node --loader ts-node/esm src/workers/build.ts\""
+    "build": "tsc",
+    "start": "node dist/workers/build.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-ecs": "^3.956.0",
+    "@aws-sdk/client-sns": "^3.978.0",
+    "@aws-sdk/client-sqs": "^3.978.0",
     "@aws-sdk/credential-providers": "^3.956.0",
     "@aws-sdk/types": "^3.956.0",
     "@types/axios": "^0.9.36",
     "@types/morgan": "^1.9.10",
     "@types/winston": "^2.4.4",
+    "@veren/domain": "*",
     "axios": "^1.13.2",
     "bullmq": "^5.66.1",
     "dotenv": "^17.2.3",

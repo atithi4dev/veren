@@ -1,144 +1,192 @@
-import { Worker } from "bullmq";
+import { Worker, Job } from "bullmq";
 import { Redis } from "ioredis";
+import fs from "fs/promises";
+
 import logger from "../logger/logger.js";
 import { cloneRepo } from "../GitHandler/gitHandler.js";
-import { CloneResult, RepoConfig } from "../types/clone.js";
-import { safeExecute } from "../types/index.js";
-import axios from "axios";
-import repoConfigGenerator from "../services/repoConfigGenerator.js";
-import fs from 'fs/promises'
+import repoConfigGenerator, { IBuild } from "../services/repoConfigGenerator.js";
+import { DeploymentStatus, publilishEvent } from "@veren/domain";
+import { CloneJobError } from "../utils/JobError.js";
+
+/* ---------------- TYPES ---------------- */
+
+interface CloneJobData {
+  projectId: string;
+  deploymentId: string;
+  token: string;
+  repoUrl: string;
+  dirPath: {
+    backendDirPath: string;
+    frontendDirPath: string;
+  };
+  build:IBuild;
+}
+
+interface CloneJobResult {
+  projectId: string;
+  deploymentId: string;
+  config: unknown;
+  commitHash: string;
+  commitMessage: string;
+}
+
+/* ---------------- REDIS ---------------- */
 
 const connection = new Redis({
-    maxRetriesPerRequest: null,
-    host: process.env.REDIS_HOST || "internal-redis",
-    port: 6379,
+  host: process.env.REDIS_HOST || "internal-redis",
+  port: 6379,
+  maxRetriesPerRequest: null,
 });
-interface dirPath {
-    backendDirPath: string,
-    frontendDirPath: string
-}
-const worker = new Worker(
-    "cloneQueue",
-    async (job) => {
-        const {
-            projectId,
-            deploymentId,
-            token,
-            repoUrl,
-            dirPath,
-            build
-        } = job.data || {};
 
-/*
-        CHECK FOR UPCOMING DATA FROM EXTRACTOR SERVICE 
-*/
+/* ---------------- WORKER ---------------- */
 
-        let { backendDirPath,
-            frontendDirPath } = dirPath as dirPath;
+export const worker = new Worker<CloneJobData, CloneJobResult>(
+  "cloneQueue",
+  async (job: Job<CloneJobData>) => {
+    const {
+      projectId,
+      deploymentId,
+      token,
+      repoUrl,
+      dirPath,
+      build,
+    } = job.data;
 
-        if (!frontendDirPath || !backendDirPath) {
-            return { cloneSkipped: true }
-        }
+    let baseDir: string | undefined;
 
-        if (!projectId || !token || !repoUrl || !deploymentId) {
-            logger.error("Missing data in cloneQueue", job.data)
-            return { projectId, cloneSkipped: true };
-        }
-
-/*
-        EXECUTE CLONING SERVICE
-*/
-        const result = await safeExecute<CloneResult>(
-            () => cloneRepo(repoUrl,
-                projectId,
-                token,
-                backendDirPath,
-                frontendDirPath),
-            {
-                projectId,
-                cloneSkipped: true
-            }
-        );
-
-        if (result.cloneSkipped) {
-            return {
-                cloneSkipped: true, projectId,
-            }
-        }
-
-/*
-        EXECUTING CONFIG GENERATOR TO BE PASSED BACK FOR UPDATING DATABASE
-*/
-        const { frontendDir, backendDir, baseDir, commitHash, commitMessage } = result;
-        const config = await safeExecute<RepoConfig>(
-            () => repoConfigGenerator(dirPath, build, frontendDir, backendDir),
-            { isConfig: false }
-        );
-        if (config.isConfig) {
-            return { config, projectId,deploymentId, baseDir,commitHash, commitMessage, cloneSkipped: false }
-        }
-    }, { connection }
-)
-
-worker.on('completed', async (job, result) => {
     try {
-        const {
-            projectId,deploymentId, cloneSkipped, config, baseDir, commitHash, commitMessage
-        } = result;
-        if (cloneSkipped) {
-            logger.info(`Cloning was skipped for job ${job.id}, not queuing build.`);
-            return
+      /* ---------- VALIDATION ---------- */
+
+      if (!projectId || !deploymentId) {
+        throw new CloneJobError("Missing identifiers", {
+          msg: "projectId or deploymentId missing",
+          metadata: { projectId, deploymentId },
+          source: "INTERNAL",
+        });
+      }
+
+      if (!token || !repoUrl) {
+        throw new CloneJobError("Auth failure", {
+          msg: "token or repoUrl missing",
+          metadata: { projectId, deploymentId },
+          source: "INTERNAL",
+        });
+      }
+
+      if (!dirPath?.backendDirPath || !dirPath?.frontendDirPath) {
+        throw new CloneJobError("Invalid directories", {
+          msg: "backendDirPath or frontendDirPath missing",
+          metadata: { projectId, deploymentId },
+          source: "INTERNAL",
+        });
+      }
+      if (!build) {
+        throw new CloneJobError("Build config not provided", {
+          msg: "Build config not provided",
+          metadata: { projectId, deploymentId },
+          source: "INTERNAL",
+        });
+      }
+
+      /* ---------- CLONE ---------- */
+
+      const cloneResult = await cloneRepo(
+        repoUrl,
+        projectId,
+        token,
+        dirPath.backendDirPath,
+        dirPath.frontendDirPath
+      );
+
+      baseDir = cloneResult.baseDir;
+
+      /* ---------- CONFIG ---------- */
+
+      const config = await repoConfigGenerator(
+        dirPath,
+        build,
+        cloneResult.frontendDir,
+        cloneResult.backendDir
+      );
+
+      if (!config?.isConfig) {
+        throw new CloneJobError("Config generation failed", {
+          msg: "repoConfigGenerator failed",
+          metadata: { projectId, deploymentId },
+          source: "INTERNAL",
+        });
+      }
+
+      /* ---------- SUCCESS ---------- */
+
+      return {
+        projectId,
+        deploymentId,
+        config,
+        commitHash: cloneResult.commitHash,
+        commitMessage: cloneResult.commitMessage,
+      };
+    } finally {
+
+    /* ---------- CLEAN FOLDER SPACE ---------- */
+    
+      if (baseDir) {
+        try {
+          await fs.rm(baseDir, { recursive: true, force: true });
+          logger.info("Cleaned clone workspace", { baseDir });
+        } catch (err) {
+          logger.warn("Failed to cleanup workspace", { baseDir, err });
         }
-
-        if (!projectId) {
-            logger.error("Project id isNot Found!");
-            return;
-        }
-
-        if (!config || !commitHash || !commitMessage) {
-            logger.error("Config for clone not found.")
-            return
-        }
-
-        logger.info(`Job ${job.id} completed`);
-
-        // DELETE BASE DIR
-        if (baseDir) {
-            try {
-                await fs.rm(baseDir, { recursive: true, force: true });
-                logger.info("Successfully cleared space of clones.")
-            } catch (error) {
-                logger.error(`Failed to delete baseDir ${baseDir}:`, error);
-            }
-        } else {
-            logger.warn("No baseDir provided to delete.");
-        }
-
-        // REQUEST TO API_GATEWAY
-        await safeExecute(
-            () => axios.patch(
-                `http://api-gateway:3000/api/v1/internal/:${projectId}/clone-metadata`,
-                {
-                    projectId, config, cloneSkipped, deploymentId, commitHash, commitMessage
-                },
-                { timeout: 10000 }
-            ),
-            null
-        );
-    } catch (error) {
-        logger.error("Error in completed handler:", error);
-
+      }
     }
-})
+  },
+  {
+    connection,
+  }
+);
 
-worker.on('failed', async (job: any, err: any) => {
-    logger.error(`JOB FAILED WITH ${job.id}`, err);
-})
+/* ---------------- EVENTS ---------------- */
 
-process.on("uncaughtException", (err) => {
-    logger.error("Uncaught exception in clone worker:", err);
+worker.on("completed", async (job, result) => {
+  logger.info("Clone analysis completed", {
+    jobId: job.id,
+    projectId: result.projectId,
+    deploymentId: result.deploymentId,
+  });
+
+  publilishEvent({
+    type: DeploymentStatus.REPO_ANALYSIS_SUCCESS,
+    projectId: result.projectId,
+    deploymentId: result.deploymentId,
+    payload: {
+      config: result.config,
+      commitHash: result.commitHash,
+      commitMessage: result.commitMessage,
+    },
+  });
 });
 
-process.on("unhandledRejection", (reason) => {
-    logger.error("Unhandled promise rejection in clone worker:", reason);
+worker.on("failed", async (job, err) => {
+  logger.error("Clone analysis failed", {
+    jobId: job?.id,
+    err,
+  });
+
+  if (err instanceof CloneJobError) {
+    publilishEvent({
+      type: DeploymentStatus.REPO_ANALYSIS_FAILED,
+      projectId: job?.data?.projectId!,
+      deploymentId: job?.data?.deploymentId!,
+      payload: err.payload,
+    });
+  } else {
+    publilishEvent({
+      type: DeploymentStatus.INTERNAL_ERROR,
+      projectId: job?.data?.projectId!,
+      deploymentId: job?.data?.deploymentId!,
+      payload: {
+        msg: "Unexpected worker crash",
+      },
+    });
+  }
 });

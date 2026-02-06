@@ -4,6 +4,7 @@ import { AwsCredentialIdentity } from "@aws-sdk/types";
 
 import dotenv from "dotenv";
 import logger from "../../logger/logger.js";
+import { DeploymentStatus, publilishEvent } from '@veren/domain';
 
 dotenv.config({
     path: '../../../.env'
@@ -47,21 +48,29 @@ export async function buildFrontend(
     let {
         frontendDir, frontendBuildCommand, frontendEnv, buildVersion, frontendInstallCommand, outDir
     } = frontendConfig;
+
     let taskArn = "";
+
     const envArray = [
         { name: 'GIT_REPOSITORY__URL', value: url },
+
         { name: 'PROJECT_ID', value: projectId },
         { name: 'DEPLOYMENTID', value: deploymentId },
+
         { name: 'FRONTENDPATH', value: frontendDir },
+        { name: 'FRONTENDOUTPUTDIR', value: outDir },
+
         { name: 'BUILDCOMMAND', value: frontendBuildCommand },
         { name: 'INSTALLCOMMAND', value: frontendInstallCommand },
-        { name: 'FRONTENDOUTPUTDIR', value: outDir },
+
         { name: 'AWS_ACCESS_KEY_ID', value: process.env.AWS_ACCESS_KEY_ID },
         { name: 'AWS_SECRET_ACCESS_KEY', value: process.env.AWS_SECRET_ACCESS_KEY },
-        { name: "REDIS_PASSWORD", value: process.env.REDIS_PASSWORD },
-        { name: "REDIS_HOST", value: process.env.REDIS_HOSTNAME },
-        { name: "REDIS_PORT", value: process.env.REDIS_PORT },
-        { name: "REDIS_USERNAME", value: process.env.REDIS_USERNAME },
+
+        { name: "KAFKA_CLIENT_ID", value: process.env.KAFKA_CLIENT_ID },
+        { name: "KAFKA_BROKER1", value: process.env.KAFKA_BROKER1 },
+        { name: "KAFKA_SASL_USERNAME", value: process.env.KAFKA_SASL_USERNAME },
+        { name: "KAFKA_SASL_PASSWORD", value: process.env.KAFKA_SASL_PASSWORD },
+        { name: "DOMAIN_EVENTS_TOPIC_ARN", value: process.env.DOMAIN_EVENTS_TOPIC_ARN }
     ]
 
     if (Array.isArray(frontendEnv)) {
@@ -110,7 +119,16 @@ export async function buildFrontend(
 
         const resp = await ecsClient.send(command18)
         if (resp.failures && resp.failures.length > 0) {
-            logger.error("Failed to start ECS task:", resp.failures);
+            publilishEvent({
+                type: DeploymentStatus.INTERNAL_ERROR,
+                projectId,
+                deploymentId,
+                payload: {
+                    commandType: command18,
+                    resFailure: resp.failures,
+                    msg: "Failed to start ECS task"
+                },
+            });
             return {
                 status: false,
                 taskArn: ""
@@ -143,7 +161,16 @@ export async function buildFrontend(
 
         const resp = await ecsClient.send(command20)
         if (resp.failures && resp.failures.length > 0) {
-            logger.error("Failed to start ECS task:", resp.failures);
+            publilishEvent({
+                type: DeploymentStatus.INTERNAL_ERROR,
+                projectId,
+                deploymentId,
+                payload: {
+                    commandType: command20,
+                    resFailure: resp.failures,
+                    msg: "Failed to start ECS task"
+                },
+            });
             return {
                 status: false,
                 taskArn: ""

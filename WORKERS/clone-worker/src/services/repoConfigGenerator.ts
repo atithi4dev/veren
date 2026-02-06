@@ -10,7 +10,7 @@ interface DirPath {
     frontendDirPath: string;
     backendDirPath: string;
 }
-interface Build {
+export interface IBuild {
     framework?: string;
     frontendBuildCommand?: string;
     backendBuildCommand?: string;
@@ -19,23 +19,28 @@ interface Build {
     frontendOutDir: string;
 }
 
-const repoConfigGenerator = async (dirPath: DirPath, build: Build, frontendDir: string, backendDir: string): Promise<RepoConfig> => {
+const repoConfigGenerator = async (
+    dirPath: DirPath,
+    build: IBuild,
+    frontendDir: string,
+    backendDir: string
+): Promise<RepoConfig> => {
 
     const { frontendDirPath, backendDirPath } = dirPath;
-    let { frontendBuildCommand, backendBuildCommand, frontendInstallCommand, backendInstallCommand, frontendOutDir } = build;
+    let { frontendBuildCommand, frontendInstallCommand, backendInstallCommand, frontendOutDir } = build;
 
     const frontendBuildVersion = detectNodeVersion(frontendDirPath);
     const backendBuildVersion = detectNodeVersion(backendDirPath);
     const buildType = detectProjectType(frontendDirPath)
-    
+
     if (!frontendBuildCommand) {
         frontendBuildCommand = detectBuildCommand(frontendDirPath, buildType);
     }
-    if(!frontendInstallCommand){
+    if (!frontendInstallCommand) {
         frontendInstallCommand = detectInstallCommand(frontendDirPath, buildType);
     }
 
-    if(!backendInstallCommand){
+    if (!backendInstallCommand) {
         backendInstallCommand = "npm install"
     }
 
@@ -45,7 +50,7 @@ const repoConfigGenerator = async (dirPath: DirPath, build: Build, frontendDir: 
         buildType,
         frontendBuildCommand,
         frontendInstallCommand,
-        outDir: frontendDir
+        outDir: frontendOutDir
     }
 
 
@@ -56,8 +61,8 @@ const repoConfigGenerator = async (dirPath: DirPath, build: Build, frontendDir: 
     };
 
     return {
-        frontendConfig, backendConfig, frontendDir,
-        backendDir, isConfig: true
+        frontendConfig, backendConfig, frontendDir: frontendDirPath,
+        backendDir: backendDirPath, isConfig: true
     }
 }
 
