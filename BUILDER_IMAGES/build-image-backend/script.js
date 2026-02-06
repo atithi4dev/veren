@@ -154,7 +154,7 @@ async function init() {
                 "BUILD",
                 `Image build failed with code: ${code}`
             );
-            publishEvent("BACKEND_BUILD_FAILED", PROJECT_ID, DEPLOYMENTID, { msg: "Image build failed with code: ${code}" })
+            publishEvent("BACKEND_BUILD_FAILED", PROJECT_ID, DEPLOYMENTID, { msg: `Image build failed with code: ${code}` })
             await safeExit(code, "Build failed");
         }
     });
