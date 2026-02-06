@@ -43,7 +43,7 @@ jobs:
                 issue_number: issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: `🚫 **Unauthorized Assignment Attempt**\n\n@${commenter}, you don't have permission to assign issues.\n\n**Only the following can assign issues:**\n- Repository owner (@${repoOwner})\n- Maintainers: ${AUTHORIZED_ASSIGNERS.map(m => '@' + m).join(', ')}\n\nIf you'd like to work on this issue, please ask a maintainer to assign it to you.`
+                body: `🚫 **Unauthorized Assignment Attempt**\n\n@${commenter}, only maintainers can use the \`/assign\` command.\n\n**To get assigned to an issue:**\n1. Comment expressing interest: "I'd like to work on this issue"\n2. Wait for a maintainer to review your request\n3. Maintainer will use \`/assign @username\` to officially assign it\n\n**Authorized to assign issues:**\n- Repository owner (@${repoOwner})\n- Maintainers: ${AUTHORIZED_ASSIGNERS.map(m => '@' + m).join(', ')}\n\nSee [CONTRIBUTING.md](../../Docs/CONTRIBUTING.md#step-2-request-assignment) for details.`
               });
               return;
             }

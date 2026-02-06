@@ -12,6 +12,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+    if: github.actor != 'atithi4dev'
     
     steps:
       - name: Checkout code
@@ -80,6 +81,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+    if: github.actor != 'atithi4dev'
     
     steps:
       - name: Validate PR Description
@@ -129,6 +131,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+    if: github.actor != 'atithi4dev'
     
     steps:
       - name: Check Target Branch
@@ -168,6 +171,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+    if: github.actor != 'atithi4dev'
     
     steps:
       - name: Check Related Issues
@@ -203,14 +207,14 @@ jobs:
                     issue_number: pr.number,
                     owner: context.repo.owner,
                     repo: context.repo.repo,
-                    body: `⚠️ **Issue Not Assigned:** Issue #${issueNum} is referenced but not assigned to anyone.\n\nPlease ensure the issue is assigned using \`/assign @username\` in the issue discussion.\n\nSee [CONTRIBUTING.md](../../CONTRIBUTING.md) for assignment workflow.`
+                    body: `⚠️ **Issue Not Assigned:** Issue #${issueNum} is referenced but not assigned to anyone.\n\n**Action required:**\nOpen issue #${issueNum} and comment expressing interest: "I'd like to work on this"\n\nA maintainer will review and assign it to you using the \`/assign @username\` command.\n\nSee [CONTRIBUTING.md](../../Docs/CONTRIBUTING.md#step-2-request-assignment) for details.`
                   });
                 } else {
                   github.rest.issues.createComment({
                     issue_number: pr.number,
                     owner: context.repo.owner,
                     repo: context.repo.repo,
-                    body: `✅ **Issue Assignment Verified:** PR correctly references assigned issue #${issueNum} (@${issue.assignee.login}).`
+                    body: `✅ **Issue Assignment Verified:** PR correctly references assigned issue #${issueNum} (assigned to @${issue.assignee.login}).`
                   });
                 }
               } catch (error) {

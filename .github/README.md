@@ -36,23 +36,27 @@ The GitHub automation system provides:
 - ✅ `perf/issue-202-optimization`
 
 ### 2. `issue-assignment.yml`
-**Purpose:** Manage issue assignment via `/assign` command
+**Purpose:** Manage issue assignment via `/assign` command (maintainers only)
 
 **Triggers:** `issue_comment` (created, edited)
 
 **Jobs:**
 - `assign-issue` - Processes `/assign @username` commands in issue comments
-  - Validates GitHub user exists
+  - **Validates authorization** (only maintainers can assign)
   - Assigns issue to mentioned user
   - Adds 'assigned' label
   - Posts confirmation comment
 - `prevent-auto-assignment` - Removes any auto-assignments when issue is created
-  - Explains `/assign` command requirement
+  - Prevents accidental assignments
+  - Directs contributors to request assignment
 
-**Usage:**
+**Usage (Maintainers Only):**
 ```
 /assign @github-username
 ```
+
+**For Contributors:**
+Comment expressing interest on an issue, then wait for a maintainer to use the `/assign` command.
 
 ### 3. `auto-manage-labels.yml`
 **Purpose:** Automatically create and manage repository labels
@@ -169,13 +173,23 @@ Templates for different issue types:
 
 ## Getting Started as a Contributor
 
-### Step 1: Assignment
-Create an issue (or find an existing one) and request assignment:
+### Step 1: Request Assignment
+Find an issue you want to work on and comment expressing interest:
+```
+I'd like to work on this issue
+```
+
+**Wait for maintainer to assign it to you.**
+
+### Step 2: Official Assignment
+The maintainer will review your request and use:
 ```
 /assign @your-github-username
 ```
 
-### Step 2: Branch Creation
+**Once assigned (you'll see the 'assigned' label), you're ready to start!**
+
+### Step 3: Branch Creation
 Create a branch following the naming convention:
 ```bash
 git checkout -b feature/issue-123-brief-description
@@ -183,14 +197,14 @@ git checkout -b feature/issue-123-brief-description
 git checkout -b fix/issue-456-bug-fix-description
 ```
 
-### Step 3: Development
+### Step 4: Development
 Make your changes and commit with proper message format:
 ```bash
 git commit -m "feat(issue-123): add new feature"
 git commit -m "fix(issue-456): fix the bug"
 ```
 
-### Step 4: Push & Create PR
+### Step 5: Push & Create PR
 ```bash
 git push origin feature/issue-123-brief-description
 ```
@@ -201,7 +215,7 @@ GitHub Actions will automatically:
 - ✅ Run security audits
 - ✅ Verify metadata and formatting
 
-### Step 5: Review
+### Step 6: Review
 Respond to feedback and update your PR as needed. The workflows will re-run automatically.
 
 ## Viewing Workflow Status

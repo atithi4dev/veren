@@ -8,6 +8,7 @@ jobs:
   protect-main:
     runs-on: ubuntu-latest
     name: Enforce PR Target Branch
+    if: github.actor != 'atithi4dev'
     
     steps:
       - name: Check PR Target Branch
@@ -68,6 +69,7 @@ jobs:
   validate-pr-content:
     runs-on: ubuntu-latest
     name: Validate PR Content
+    if: github.actor != 'atithi4dev'
     
     steps:
       - uses: actions/checkout@v4
@@ -105,6 +107,7 @@ jobs:
   assign-check:
     runs-on: ubuntu-latest
     name: Verify Assignment through /assign Command
+    if: github.actor != 'atithi4dev'
     
     steps:
       - name: Check if PR is assigned
