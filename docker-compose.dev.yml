@@ -80,7 +80,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - clones-data:/src/build-worker/src/clones
     env_file:
-      - ./WORKERS//build-worker/.env
+      - ./WORKERS/build-worker/.env
     networks:
       - veren
     depends_on:

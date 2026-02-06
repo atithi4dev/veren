@@ -9,7 +9,7 @@ const sns = new SNSClient({
 
 const TOPIC_ARN = process.env.DOMAIN_EVENTS_TOPIC_ARN;
 
-async function publilishEvent(type, projectId, deploymentId, payload) {
+async function publishEvent(type, projectId, deploymentId, payload) {
     await sns.send(
         new PublishCommand({
             TopicArn: TOPIC_ARN,
@@ -23,4 +23,4 @@ async function publilishEvent(type, projectId, deploymentId, payload) {
     )
 }
 
-module.exports = { publilishEvent };
+module.exports = { publishEvent };

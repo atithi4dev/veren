@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import { AwsCredentialIdentity } from "@aws-sdk/types";
 import { ECSClient, RunTaskCommand } from "@aws-sdk/client-ecs";
 import { backendECSConfig } from "../../config/ECSconfig.js"
-import { DeploymentStatus, publilishEvent } from "@veren/domain";
+import { DeploymentStatus, publishEvent } from "@veren/domain";
 
 dotenv.config({
     path: '../../../.env'
@@ -90,7 +90,7 @@ export async function buildBackend(
 
     const resp = await ecsClient.send(backendCommand)
     if (resp.failures && resp.failures.length > 0) {
-        publilishEvent({
+        publishEvent({
             type: DeploymentStatus.INTERNAL_ERROR,
             projectId,
             deploymentId,

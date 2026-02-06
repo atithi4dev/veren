@@ -5,7 +5,7 @@ import fs from "fs/promises";
 import logger from "../logger/logger.js";
 import { cloneRepo } from "../GitHandler/gitHandler.js";
 import repoConfigGenerator, { IBuild } from "../services/repoConfigGenerator.js";
-import { DeploymentStatus, publilishEvent } from "@veren/domain";
+import { DeploymentStatus, publishEvent } from "@veren/domain";
 import { CloneJobError } from "../utils/JobError.js";
 
 /* ---------------- TYPES ---------------- */
@@ -19,7 +19,7 @@ interface CloneJobData {
     backendDirPath: string;
     frontendDirPath: string;
   };
-  build:IBuild;
+  build: IBuild;
 }
 
 interface CloneJobResult {
@@ -128,8 +128,8 @@ export const worker = new Worker<CloneJobData, CloneJobResult>(
       };
     } finally {
 
-    /* ---------- CLEAN FOLDER SPACE ---------- */
-    
+      /* ---------- CLEAN FOLDER SPACE ---------- */
+
       if (baseDir) {
         try {
           await fs.rm(baseDir, { recursive: true, force: true });
@@ -154,7 +154,7 @@ worker.on("completed", async (job, result) => {
     deploymentId: result.deploymentId,
   });
 
-  publilishEvent({
+  publishEvent({
     type: DeploymentStatus.REPO_ANALYSIS_SUCCESS,
     projectId: result.projectId,
     deploymentId: result.deploymentId,
@@ -173,14 +173,14 @@ worker.on("failed", async (job, err) => {
   });
 
   if (err instanceof CloneJobError) {
-    publilishEvent({
+    publishEvent({
       type: DeploymentStatus.REPO_ANALYSIS_FAILED,
       projectId: job?.data?.projectId!,
       deploymentId: job?.data?.deploymentId!,
       payload: err.payload,
     });
   } else {
-    publilishEvent({
+    publishEvent({
       type: DeploymentStatus.INTERNAL_ERROR,
       projectId: job?.data?.projectId!,
       deploymentId: job?.data?.deploymentId!,

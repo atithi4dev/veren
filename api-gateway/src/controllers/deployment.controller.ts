@@ -7,7 +7,7 @@ import { cloneQueue } from "../Queue/clone-queue.js";
 
 import logger from "../logger/logger.js";
 
-import { Project, DeploymentStatus, publilishEvent } from "@veren/domain";
+import { Project, DeploymentStatus, publishEvent } from "@veren/domain";
 import { Deployment } from "@veren/domain";
 
 
@@ -84,7 +84,7 @@ const deployProject = asyncHandler(async (req: Request, res: Response) => {
 
     logger.info(`Clone job added for project ${projectId}`);
 
-    publilishEvent({
+    publishEvent({
       type: DeploymentStatus.CREATED,
       projectId: projectId,
       deploymentId: newDeployment._id.toString(),
