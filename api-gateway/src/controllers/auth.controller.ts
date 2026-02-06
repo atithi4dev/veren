@@ -120,7 +120,7 @@ const getMe = asyncHandler(async (req: Request, res: Response) => {
     }
     let user = await User.findById(req.user.id).select(
         "name userName email avatar provider createdAt"
-    );;
+    );
 
     if (!user) {
         return res.status(404).json(
