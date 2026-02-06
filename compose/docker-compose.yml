@@ -1,0 +1,40 @@
+services:
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: ${DOCKERFILE:-Dockerfile}
+    container_name: api-gateway
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./api-gateway/.env
+    networks:
+      - veren
+    depends_on:
+      - submission-service
+
+  submission-service:
+    build:
+      context: ./submission-service
+      dockerfile: ${DOCKERFILE:-Dockerfile}
+    container_name: submission-service
+    env_file:
+      - ./submission-service/.env
+    networks:
+      - veren
+
+  extractor-service:
+    build:
+      context: ./extractor-service
+      dockerfile: ${DOCKERFILE:-Dockerfile}
+    container_name: extractor-service
+    env_file:
+      - ./extractor-service/.env
+    volumes:
+      - ./clones:/src/clones 
+    networks:
+      - veren
+
+networks:
+  veren:
+    external: true
