@@ -4,7 +4,7 @@ import { AwsCredentialIdentity } from "@aws-sdk/types";
 
 import dotenv from "dotenv";
 import logger from "../../logger/logger.js";
-import { DeploymentStatus, publilishEvent } from '@veren/domain';
+import { DeploymentStatus, publishEvent } from '@veren/domain';
 
 dotenv.config({
     path: '../../../.env'
@@ -119,7 +119,7 @@ export async function buildFrontend(
 
         const resp = await ecsClient.send(command18)
         if (resp.failures && resp.failures.length > 0) {
-            publilishEvent({
+            publishEvent({
                 type: DeploymentStatus.INTERNAL_ERROR,
                 projectId,
                 deploymentId,
@@ -161,7 +161,7 @@ export async function buildFrontend(
 
         const resp = await ecsClient.send(command20)
         if (resp.failures && resp.failures.length > 0) {
-            publilishEvent({
+            publishEvent({
                 type: DeploymentStatus.INTERNAL_ERROR,
                 projectId,
                 deploymentId,

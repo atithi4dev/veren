@@ -214,12 +214,12 @@ Respond to feedback and update your PR as needed. The workflows will re-run auto
 ## Troubleshooting Common Issues
 
 ### "PR targets main branch"
-❌ **Problem:** You opened a PR to `main` instead of `test`
+❌ **Problem:** You opened a PR to `main` instead of `develop`
 
 ✅ **Solution:**
 1. Close this PR
-2. Create a new PR to the `test` branch
-3. Follow the workflow for releases from `test` → `main`
+2. Create a new PR to the `develop` branch
+3. Follow the workflow for releases from `develop` → `main`
 
 ### "Commit message doesn't match format"
 ❌ **Problem:** Commit message like `"fixed bug"` or `"Update stuff"`

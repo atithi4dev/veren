@@ -68,7 +68,7 @@ Any help or feedback is appreciated
 
 ## Support -
 Open an [issue](https://github.com/atithi4dev/veren/issues) on the GitHub repository.
-
+Tag on [Discord](https://discord.gg/tACgSEYz)
 Reach out via [email](atithisingh.dev@gmail.com) or project discussion.
 
 
