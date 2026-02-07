@@ -10,7 +10,7 @@ const sns = new SNSClient({
 
 const TOPIC_ARN = process.env.DOMAIN_EVENTS_TOPIC_ARN!;
 
-export async function publilishEvent(event: {
+export async function publishEvent(event: {
     type: DeploymentStatusI;
     projectId: string;
     deploymentId: string;

@@ -5,4 +5,4 @@ export { Project } from "./project.model.js"
 export type { IProject } from "./types/project.js";
 
 export { DeploymentStatus } from './enums.js'
-export { publilishEvent } from './publisher.js'
+export { publishEvent } from './publisher.js'

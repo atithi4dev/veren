@@ -1,6 +1,6 @@
 import { Router } from "express"
 import { verifyJwt } from "../middlewares/auth.middlewares.js";
-import {deployProject} from "../controllers/deployment.controller.js"
+import {deployProject, deployTo, roleBackProject} from "../controllers/deployment.controller.js"
 const router = Router();
 
 router.use(verifyJwt);
@@ -8,8 +8,8 @@ router.use(verifyJwt);
 router.route('/:projectId')
     .get(deployProject)
 router.route('/d/:projectId')
-    .post(deployProject)
+    .post(deployTo)
 router.route('/r/:projectId')
-    .post(deployProject)
+    .post(roleBackProject)
 
 export default router;

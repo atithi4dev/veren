@@ -1,0 +1,223 @@
+name: PR Review & Commit Validation
+
+on:
+  pull_request:
+    branches: [test, main]
+    types: [opened, reopened, synchronize]
+
+jobs:
+  commit-validation:
+    runs-on: ubuntu-latest
+    name: Validate Commit Messages
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.actor != 'atithi4dev'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate Commit Messages
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: commits } = await github.rest.pulls.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            const validCommitPattern = /^(feat|fix|docs|style|refactor|perf|test|chore)\(issue-\d+\):/;
+            const issues = [];
+            
+            commits.forEach((commit, index) => {
+              const message = commit.commit.message.split('\n')[0];
+              
+              if (!validCommitPattern.test(message)) {
+                issues.push({
+                  index: index + 1,
+                  message: message,
+                  expected: 'feat(issue-123): description or fix(issue-456): description'
+                });
+              }
+            });
+            
+            if (issues.length > 0) {
+              let comment = '⚠️ **Commit Message Format Issues Found:**\n\n';
+              comment += 'Commits must follow the format: `type(issue-#): description`\n\n';
+              comment += '**Invalid Commits:**\n';
+              
+              issues.forEach(issue => {
+                comment += `- Commit #${issue.index}: \`${issue.message}\`\n`;
+                comment += `  Expected format: \`${issue.expected}\`\n`;
+              });
+              
+              comment += '\n**Valid Types:** feat, fix, docs, style, refactor, perf, test, chore\n';
+              comment += '**Example:** `feat(issue-45): add new authentication endpoint`\n';
+              comment += `\nPlease see [CONTRIBUTING.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/Docs/CONTRIBUTING.md#commit-guidelines) for detailed guidelines.`;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            } else {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '✅ **Commit Validation:** All commits follow the required format. Great job!'
+              });
+            }
+
+  pr-metadata-check:
+    runs-on: ubuntu-latest
+    name: Check PR Metadata
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.actor != 'atithi4dev'
+    
+    steps:
+      - name: Validate PR Description
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const description = pr.body || '';
+            
+            const hasIssueLink = /Closes\s+#\d+|Fixes\s+#\d+|Resolves\s+#\d+/i.test(description);
+            const hasDescription = description.length > 50;
+            const hasTypeOfChange = /Type of Change|Type of change/i.test(description);
+            const hasChecklist = /- \[/i.test(description);
+            
+            const checks = {
+              'Issue Link': hasIssueLink,
+              'Description (50+ chars)': hasDescription,
+              'Type of Change Section': hasTypeOfChange,
+              'Checklist': hasChecklist
+            };
+            
+            let allPass = Object.values(checks).every(v => v);
+            
+            let comment = '📋 **PR Metadata Check:**\n\n';
+            
+            Object.entries(checks).forEach(([check, passed]) => {
+              comment += `${passed ? '✅' : '❌'} ${check}\n`;
+            });
+            
+            if (!allPass) {
+              comment += '\n**Please ensure all sections are completed.** Review the [PR template](../../pull_request_template.md).';
+            } else {
+              comment += '\n✨ All metadata checks passed!';
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  prevent-direct-pushes:
+    runs-on: ubuntu-latest
+    name: Enforce Test Branch
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.actor != 'atithi4dev'
+    
+    steps:
+      - name: Check Target Branch
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const targetBranch = pr.base.ref;
+            const prAuthor = pr.user.login;
+            
+            if (targetBranch === 'main') {
+              // AUTHORIZATION: Repository owner and specific admin users
+              const AUTHORIZED_ADMINS = ['atithi4dev']; // Admins with full access
+              const repoOwner = context.repo.owner;
+              
+              const isOwner = prAuthor.toLowerCase() === repoOwner.toLowerCase();
+              const isAdmin = AUTHORIZED_ADMINS.some(u => u.toLowerCase() === prAuthor.toLowerCase());
+              
+              if (isOwner || isAdmin) {
+                console.log(`✅ Authorized user @${prAuthor} can merge to main`);
+                return; // Allow authorized users
+              }
+              
+              // Block all non-authorized users
+              github.rest.issues.createComment({
+                issue_number: pr.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🚫 **Branch Protection:** This PR targets \`main\`. All changes must go through the \`test\` branch first.\n\n**Action Required:**\n1. Close this PR\n2. Create a new PR targeting the \`test\` branch\n3. Once merged to \`test\`, create a release PR from \`test\` to \`main\`\n\n**Note:** Only authorized admins can create PRs to \`main\`.\n\nSee [CONTRIBUTING.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/Docs/CONTRIBUTING.md) for details.`
+              });
+            }
+
+  require-issue-assignment:
+    runs-on: ubuntu-latest
+    name: Verify Issue Assignment
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.actor != 'atithi4dev'
+    
+    steps:
+      - name: Check Related Issues
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const description = pr.body || '';
+            
+            // Look for issue references
+            const issueMatches = description.match(/#(\d+)/g) || [];
+            
+            if (issueMatches.length === 0) {
+              github.rest.issues.createComment({
+                issue_number: pr.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '⚠️ **Missing Issue Reference:** This PR should reference a related issue using "Closes #123" or similar.\n\nIf this PR resolves an issue, please add it to the PR description.\n\nSee [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.'
+              });
+            } else {
+              // Check if referenced issue is assigned
+              const issueNum = issueMatches[0].replace('#', '');
+              try {
+                const { data: issue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNum
+                });
+                
+                if (!issue.assignee) {
+                  github.rest.issues.createComment({
+                    issue_number: pr.number,
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    body: `⚠️ **Issue Not Assigned:** Issue #${issueNum} is referenced but not assigned to anyone.\n\n**Action required:**\nOpen issue #${issueNum} and comment expressing interest: "I'd like to work on this"\n\nA maintainer will review and assign it to you using the \`/assign @username\` command.\n\nSee [CONTRIBUTING.md](../../Docs/CONTRIBUTING.md#step-2-request-assignment) for details.`
+                  });
+                } else {
+                  github.rest.issues.createComment({
+                    issue_number: pr.number,
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    body: `✅ **Issue Assignment Verified:** PR correctly references assigned issue #${issueNum} (assigned to @${issue.assignee.login}).`
+                  });
+                }
+              } catch (error) {
+                console.log(`Could not fetch issue details: ${error.message}`);
+              }
+            }

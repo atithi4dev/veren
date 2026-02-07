@@ -7,7 +7,7 @@ import { cloneQueue } from "../Queue/clone-queue.js";
 
 import logger from "../logger/logger.js";
 
-import { Project, DeploymentStatus, publilishEvent } from "@veren/domain";
+import { Project, DeploymentStatus, publishEvent } from "@veren/domain";
 import { Deployment } from "@veren/domain";
 
 
@@ -84,7 +84,7 @@ const deployProject = asyncHandler(async (req: Request, res: Response) => {
 
     logger.info(`Clone job added for project ${projectId}`);
 
-    publilishEvent({
+    publishEvent({
       type: DeploymentStatus.CREATED,
       projectId: projectId,
       deploymentId: newDeployment._id.toString(),
@@ -102,6 +102,10 @@ const deployProject = asyncHandler(async (req: Request, res: Response) => {
   return res.status(200).json({ message: "Deployment triggered successfully." });
 })
 
+const roleBackProject = asyncHandler(async (req:Request, res: Response) =>{
+
+})
+
 const deployTo = asyncHandler(async (req: Request, res: Response) => {
   // const { projectId }= req.body;
   // const lastDeployment = await Deployment.findOne({ projectId })
@@ -110,5 +114,5 @@ const deployTo = asyncHandler(async (req: Request, res: Response) => {
 })
 
 export {
-  deployProject, deployTo
+  deployProject, deployTo, roleBackProject
 }

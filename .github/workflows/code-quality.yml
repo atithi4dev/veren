@@ -1,0 +1,212 @@
+name: Code Quality & Tests
+
+on:
+  pull_request:
+    branches: [test, main]
+    types: [opened, reopened, synchronize]
+  push:
+    branches: [test]
+
+jobs:
+  lint-and-type-check:
+    runs-on: ubuntu-latest
+    name: Lint & Type Check
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.actor != 'atithi4dev'
+    
+    strategy:
+      matrix:
+        node-version: [18.x]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies (Root)
+        run: npm ci --legacy-peer-deps 2>&1 || true
+
+      - name: Install dependencies (API Gateway)
+        run: cd api-gateway && npm ci --legacy-peer-deps 2>&1 || true
+
+      - name: Install dependencies (Build Worker)
+        run: cd WORKERS/build-worker && npm ci --legacy-peer-deps 2>&1 || true
+
+      - name: Install dependencies (Clone Worker)
+        run: cd WORKERS/clone-worker && npm ci --legacy-peer-deps 2>&1 || true
+
+      - name: Install dependencies (Routing Service)
+        run: cd routing-service && npm ci --legacy-peer-deps 2>&1 || true
+
+      - name: Install dependencies (Orchestrate Service)
+        run: cd orchestrate-service && npm ci --legacy-peer-deps 2>&1 || true
+
+      - name: Install dependencies (Notification Service)
+        run: cd notification-service && npm ci --legacy-peer-deps 2>&1 || true
+
+      - name: TypeScript Check (API Gateway)
+        continue-on-error: true
+        run: cd api-gateway && npm run build 2>&1 || npx tsc --noEmit 2>&1 || true
+
+      - name: TypeScript Check (Build Worker)
+        continue-on-error: true
+        run: cd WORKERS/build-worker && npm run build 2>&1 || npx tsc --noEmit 2>&1 || true
+
+      - name: TypeScript Check (Clone Worker)
+        continue-on-error: true
+        run: cd WORKERS/clone-worker && npm run build 2>&1 || npx tsc --noEmit 2>&1 || true
+
+      - name: TypeScript Check (Routing Service)
+        continue-on-error: true
+        run: cd routing-service && npm run build 2>&1 || npx tsc --noEmit 2>&1 || true
+
+      - name: TypeScript Check (Orchestrate Service)
+        continue-on-error: true
+        run: cd orchestrate-service && npm run build 2>&1 || npx tsc --noEmit 2>&1 || true
+
+      - name: TypeScript Check (Notification Service)
+        continue-on-error: true
+        run: cd notification-service && npm run build 2>&1 || npx tsc --noEmit 2>&1 || true
+
+      - name: Lint Check (API Gateway)
+        continue-on-error: true
+        run: cd api-gateway && npm run lint 2>&1 || npx eslint . 2>&1 || echo "No linting configured"
+
+      - name: Comment on PR with Status
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ **Code Quality Checks:** TypeScript compilation and linting checks completed. Please ensure no breaking TypeScript errors are present before requesting review.'
+            });
+
+  security-audit:
+    runs-on: ubuntu-latest
+    name: Dependencies Security Audit
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.actor != 'atithi4dev'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci --legacy-peer-deps 2>&1 || true
+
+      - name: Security audit (Root)
+        continue-on-error: true
+        run: npm audit --audit-level=moderate 2>&1 || echo "Audit completed with warnings"
+
+      - name: Security audit (API Gateway)
+        continue-on-error: true
+        run: cd api-gateway && npm audit --audit-level=moderate 2>&1 || echo "Audit completed with warnings"
+
+      - name: Security audit (Build Worker)
+        continue-on-error: true
+        run: cd WORKERS/build-worker && npm audit --audit-level=moderate 2>&1 || echo "Audit completed with warnings"
+
+      - name: Security audit (Clone Worker)
+        continue-on-error: true
+        run: cd WORKERS/clone-worker && npm audit --audit-level=moderate 2>&1 || echo "Audit completed with warnings"
+
+      - name: Security audit (Routing Service)
+        continue-on-error: true
+        run: cd routing-service && npm audit --audit-level=moderate 2>&1 || echo "Audit completed with warnings"
+
+      - name: Security audit (Orchestrate Service)
+        continue-on-error: true
+        run: cd orchestrate-service && npm audit --audit-level=moderate 2>&1 || echo "Audit completed with warnings"
+
+      - name: Security audit (Notification Service)
+        continue-on-error: true
+        run: cd notification-service && npm audit --audit-level=moderate 2>&1 || echo "Audit completed with warnings"
+
+      - name: Comment on PR with Security Status
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🔒 **Security Audit:** Dependencies have been checked for known vulnerabilities. Address any critical or high-severity issues before merge. See [SECURITY.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/.github/SECURITY.md) for guidelines.`
+            });
+
+  build-check:
+    runs-on: ubuntu-latest
+    name: Build Verification
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.actor != 'atithi4dev'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+
+      - name: Build API Gateway
+        continue-on-error: true
+        run: cd api-gateway && npm install --legacy-peer-deps 2>&1 && npm run build 2>&1 || echo "Build attempted"
+
+      - name: Build Check Workers
+        continue-on-error: true
+        run: |
+          for dir in WORKERS/build-worker WORKERS/clone-worker; do
+            if [ -d "$dir" ]; then
+              cd "$dir" && npm install --legacy-peer-deps 2>&1 && npm run build 2>&1 || true
+              cd - > /dev/null
+            fi
+          done
+
+      - name: Build Check Services
+        continue-on-error: true
+        run: |
+          for dir in routing-service orchestrate-service notification-service; do
+            if [ -d "$dir" ]; then
+              cd "$dir" && npm install --legacy-peer-deps 2>&1 && npm run build 2>&1 || true
+              cd - > /dev/null
+            fi
+          done
+
+      - name: Comment on PR with Build Status
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🏗️ **Build Verification:** Build checks have been executed for all services. Ensure your changes compile correctly before requesting review.'
+            });

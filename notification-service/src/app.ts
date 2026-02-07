@@ -21,12 +21,6 @@ app.use(express.urlencoded({extended: true, limit: '16kb'}))
 app.use(cookieParser()); 
 app.use(express.static('public'));
 
-
-app.post('api/v1/log/:dp',(req,res)=>{
-     console.log("NOTIFICATION SERVICE RECIVED API REQUEST.");
-     return res.json({msg: "DONE MAN"});
-});
-
 app.use(errorHandler)
 
 export default app;

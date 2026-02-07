@@ -1,0 +1,127 @@
+name: Protect Main Branch
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  protect-main:
+    runs-on: ubuntu-latest
+    name: Enforce PR Target Branch
+    if: github.actor != 'atithi4dev'
+    
+    steps:
+      - name: Check PR Target Branch
+        if: github.base_ref == 'main'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const prAuthor = pr.user.login;
+            const repoOwner = context.repo.owner;
+            
+            // AUTHORIZATION: Repository owner and specific admin users
+            const AUTHORIZED_ADMINS = ['atithi4dev']; // Admins with full access
+            
+            const isOwner = prAuthor.toLowerCase() === repoOwner.toLowerCase();
+            const isAdmin = AUTHORIZED_ADMINS.some(u => u.toLowerCase() === prAuthor.toLowerCase());
+            
+            if (isOwner || isAdmin) {
+              console.log(`✅ Authorized user @${prAuthor} can create PRs to main branch`);
+              await github.rest.issues.createComment({
+                issue_number: pr.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `✅ **Authorized Release PR** - @${prAuthor} is authorized to merge to \`main\`.\n\n⚠️ **Important:** Ensure this has been tested in \`test\` branch first!`
+              });
+              return;
+            }
+            
+            // Block all non-authorized users
+            await github.rest.issues.createComment({
+              issue_number: pr.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚫 **Branch Protection:** This PR targets \`main\`. All changes must go through the \`test\` branch first.\n\n**Action Required:**\n1. Close this PR\n2. Create a new PR targeting the \`test\` branch\n3. Once merged to \`test\`, create a release PR from \`test\` to \`main\`\n\n**Note:** Only authorized admins can create PRs directly to \`main\`.\n\nSee [CONTRIBUTING.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/Docs/CONTRIBUTING.md) for details.`
+            });
+            core.setFailed('Unauthorized PR to main branch');
+            process.exit(1);
+
+      - name: Check PR Branch Naming Convention
+        if: github.head_ref != null
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          
+          # Allowed patterns: feature/issue-*, fix/issue-*, docs/issue-*, etc.
+          if [[ ! $BRANCH_NAME =~ ^(feature|fix|docs|refactor|perf|test|chore)/issue-[0-9]+-[a-z0-9-]+$ ]]; then
+            echo "⚠️  WARNING: Branch name '$BRANCH_NAME' doesn't follow convention"
+            echo ""
+            echo "Expected format: <type>/issue-<number>-<description>"
+            echo "Examples:"
+            echo "  - feature/issue-45-add-rate-limiting"
+            echo "  - fix/issue-78-handle-null-env"
+            echo "  - docs/issue-50-update-api-docs"
+            echo ""
+            echo "While this is a warning, please follow the convention in the future!"
+          fi
+
+  validate-pr-content:
+    runs-on: ubuntu-latest
+    name: Validate PR Content
+    if: github.actor != 'atithi4dev'
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for Required PR Template Fields
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+            
+            const requiredSections = [
+              { name: 'Issue', pattern: /##\s+Issue\s*\n\s*Closes\s+#\d+/i },
+              { name: 'Description', pattern: /##\s+Description\s*\n/i },
+              { name: 'Type of Change', pattern: /##\s+Type\s+of\s+Change/i },
+              { name: 'Checklist', pattern: /##\s+Checklist/i }
+            ];
+            
+            const missing = requiredSections.filter(section => !section.pattern.test(body));
+            
+            if (missing.length > 0) {
+              const missingNames = missing.map(s => `- ${s.name}`).join('\n');
+              github.rest.issues.createComment({
+                issue_number: pr.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `❌ Please complete the PR template with the following sections:\n\n${missingNames}\n\nRefer to the PR template for the required format.`
+              });
+              throw new Error('PR template is incomplete');
+            }
+            
+            console.log('✅ PR template validation passed');
+
+  assign-check:
+    runs-on: ubuntu-latest
+    name: Verify Assignment through /assign Command
+    if: github.actor != 'atithi4dev'
+    
+    steps:
+      - name: Check if PR is assigned
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            
+            if (pr.assignees && pr.assignees.length > 0) {
+              github.rest.issues.createComment({
+                issue_number: pr.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `⚠️ **Note:** Assignment should only be done through the related issue using the \`/assign\` command. Please make sure the linked issue is properly assigned.`
+              });
+            }

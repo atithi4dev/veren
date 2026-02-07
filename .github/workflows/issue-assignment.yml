@@ -1,0 +1,190 @@
+name: Handle Issue Assignment Command
+
+on:
+  issue_comment:
+    types: [created, edited]
+  issues:
+    types: [opened, assigned]
+
+jobs:
+  assign-issue:
+    runs-on: ubuntu-latest
+    name: Process /assign Command
+    permissions:
+      issues: write
+      contents: read
+    if: github.event_name == 'issue_comment'
+    
+    steps:
+      - name: Check for /assign Command
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const comment = context.payload.comment.body.trim();
+            const issue = context.payload.issue;
+            const commenter = context.payload.comment.user.login;
+            
+            // Check if comment starts with /assign
+            if (!comment.startsWith('/assign')) {
+              return;
+            }
+            
+            // AUTHORIZATION CHECK: Only owner or specific maintainer can assign
+            const AUTHORIZED_ASSIGNERS = ['atithi4dev']; // Add more maintainers here
+            const repoOwner = context.repo.owner;
+            
+            // Check if commenter is authorized (owner or in the authorized list)
+            const isOwner = commenter.toLowerCase() === repoOwner.toLowerCase();
+            const isMaintainer = AUTHORIZED_ASSIGNERS.some(m => m.toLowerCase() === commenter.toLowerCase());
+            
+            if (!isOwner && !isMaintainer) {
+              await github.rest.issues.createComment({
+                issue_number: issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🚫 **Unauthorized Assignment Attempt**\n\n@${commenter}, only maintainers can use the \`/assign\` command.\n\n**To get assigned to an issue:**\n1. Comment expressing interest: "I'd like to work on this issue"\n2. Wait for a maintainer to review your request\n3. Maintainer will use \`/assign @username\` to officially assign it\n\n**Authorized to assign issues:**\n- Repository owner (@${repoOwner})\n- Maintainers: ${AUTHORIZED_ASSIGNERS.map(m => '@' + m).join(', ')}\n\nSee [CONTRIBUTING.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/Docs/CONTRIBUTING.md#step-2-request-assignment) for details.`
+              });
+              return;
+            }
+            
+            // Extract username if provided, otherwise assign to commenter
+            const match = comment.match(/^\/assign\s+(@)?(\w+)?/i);
+            let assignee = commenter;
+            
+            if (match && match[2]) {
+              assignee = match[2];
+            }
+            
+            // Prevent self-assignment for pull requests
+            if (issue.pull_request && assignee === commenter) {
+              github.rest.issues.createComment({
+                issue_number: issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `❌ **Cannot assign yourself in a PR!** You are already the PR author. Issues should be assigned through their related issues.`
+              });
+              return;
+            }
+            
+            try {
+              // Check if user exists
+              try {
+                await github.rest.users.getByUsername({
+                  username: assignee
+                });
+              } catch (err) {
+                github.rest.issues.createComment({
+                  issue_number: issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: `❌ User \`@${assignee}\` not found. Please check the username.`
+                });
+                return;
+              }
+              
+              // Assign the issue
+              github.rest.issues.addAssignees({
+                issue_number: issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                assignees: [assignee]
+              });
+              
+              // Add label
+              if (!issue.labels.some(label => label.name === 'assigned')) {
+                github.rest.issues.addLabels({
+                  issue_number: issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  labels: ['assigned']
+                });
+              }
+              
+              // Confirm assignment
+              github.rest.issues.createComment({
+                issue_number: issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `✅ Issue assigned to @${assignee}. Please follow the [CONTRIBUTING.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/Docs/CONTRIBUTING.md) guidelines.`
+              });
+            } catch (error) {
+              github.rest.issues.createComment({
+                issue_number: issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `❌ Error assigning issue: ${error.message}`
+              });
+            }
+
+  prevent-auto-assignment:
+    runs-on: ubuntu-latest
+    name: Prevent Accidental Assignment
+    permissions:
+      issues: write
+      contents: read
+    if: github.event_name == 'issues'
+    
+    steps:
+      - name: Verify No Auto-Assignment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue = context.payload.issue;
+            const action = context.payload.action;
+            
+            // AUTHORIZATION LIST: Only these users can assign
+            const AUTHORIZED_ASSIGNERS = ['codewithatith']; // Add more maintainers here
+            const repoOwner = context.repo.owner;
+            
+            // Check for unwanted assignments (opened or manually assigned without /assign command)
+            if ((action === 'opened' || action === 'assigned') && issue.assignees && issue.assignees.length > 0) {
+              
+              // Check if assignment came from a /assign command by checking recent comments
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                per_page: 10
+              });
+              
+              // Look for /assign command in recent comments
+              const hasAssignCommand = comments.some(c => c.body.trim().startsWith('/assign'));
+              
+              // Get the user who triggered this (from the event)
+              let assignerLogin = null;
+              if (context.payload.sender) {
+                assignerLogin = context.payload.sender.login;
+              }
+              
+              // Check if assigner is authorized (owner or maintainer)
+              const isOwner = assignerLogin && assignerLogin.toLowerCase() === repoOwner.toLowerCase();
+              const isMaintainer = assignerLogin && AUTHORIZED_ASSIGNERS.some(m => m.toLowerCase() === assignerLogin.toLowerCase());
+              const isAuthorized = isOwner || isMaintainer;
+              
+              // Allow assignment if:
+              // 1. There's a /assign command in comments, OR
+              // 2. The assigner is authorized (owner/maintainer)
+              if (hasAssignCommand || isAuthorized) {
+                console.log(`Assignment allowed for issue #${issue.number} (authorized: ${isAuthorized}, has command: ${hasAssignCommand})`);
+                return;
+              }
+              
+              // If no /assign command and not authorized, remove the assignment
+              await github.rest.issues.removeAssignees({
+                issue_number: issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                assignees: issue.assignees.map(a => a.login)
+              });
+              
+              await github.rest.issues.createComment({
+                issue_number: issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🚫 **Unauthorized assignment detected and removed!**\n\n**This issue cannot be assigned without authorization.**\n\nIssues can only be assigned by:\n- Repository owner (@${repoOwner})\n- Maintainers: ${AUTHORIZED_ASSIGNERS.map(m => '@' + m).join(', ')}\n\n**To request assignment:**\nAsk a maintainer to use: \`/assign @username\`\n\n**Why this rule exists:**\nThis ensures proper tracking and prevents unauthorized assignments. See [CONTRIBUTING.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/Docs/CONTRIBUTING.md) for details.`
+              });
+              
+              console.log(`Removed unauthorized assignment for issue #${issue.number}`);
+            }

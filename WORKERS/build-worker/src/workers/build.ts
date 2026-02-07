@@ -7,7 +7,7 @@ import { buildFrontend } from "../services/distributionHandler/buildFrontend.js"
 import { buildBackend } from "../services/distributionHandler/buildBackend.js"
 import { safeExecute } from "../types/index.js";
 
-import { DeploymentStatus, publilishEvent } from '@veren/domain'
+import { DeploymentStatus, publishEvent } from '@veren/domain'
 import { BuildJobError } from "../utils/buildError.js";
 
 dotenv.config({ path: "../../.env" });
@@ -129,7 +129,7 @@ const worker = new Worker<BuildJobData, BuildJobResult>('buildQueue',
 worker.on('completed', async (job, result) => {
     const { projectId, deploymentId, FrontendtaskArn, BackendtaskArn } = result;
 
-    publilishEvent({
+    publishEvent({
         type: DeploymentStatus.BUILD_QUEUE_SUCCESS,
         projectId: result.projectId,
         deploymentId: result.deploymentId,
@@ -147,21 +147,21 @@ worker.on('failed', async (job: any, err: any) => {
     });
     if (err instanceof BuildJobError) {
         if (err.message == "BACKEND_BUILT_FAILED") {
-            publilishEvent({
+            publishEvent({
                 type: DeploymentStatus.BACKEND_QUEUE_FAILED,
                 projectId: job?.data?.projectId!,
                 deploymentId: job?.data?.deploymentId!,
                 payload: err.payload,
             });
         } else if (err.message == "FRONTEND_BUILT_FAILED") {
-            publilishEvent({
+            publishEvent({
                 type: DeploymentStatus.FRONTEND_QUEUE_FAILED,
                 projectId: job?.data?.projectId!,
                 deploymentId: job?.data?.deploymentId!,
                 payload: err.payload,
             });
         } else {
-            publilishEvent({
+            publishEvent({
                 type: DeploymentStatus.BUILD_UNKNOWN_FAILURE,
                 projectId: job?.data?.projectId!,
                 deploymentId: job?.data?.deploymentId!,
@@ -169,7 +169,7 @@ worker.on('failed', async (job: any, err: any) => {
             });
         }
     } else {
-        publilishEvent({
+        publishEvent({
             type: DeploymentStatus.INTERNAL_ERROR,
             projectId: job?.data?.projectId!,
             deploymentId: job?.data?.deploymentId!,

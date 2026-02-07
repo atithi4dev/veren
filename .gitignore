@@ -6,8 +6,6 @@ node_modules/
 .env
 *.env
 **/*.env
-*.local
-**/*.local
 
 # Build Outputs
 dist/
@@ -50,6 +48,8 @@ coverage/
 api-gateway/src/postgres.env
 WORKERS/build-worker/.env
 WORKERS/clone-worker/.env
+
+packages/domain/.env
 
 # Temp / Runtime folders
 clones/
