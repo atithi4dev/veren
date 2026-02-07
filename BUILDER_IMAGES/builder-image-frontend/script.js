@@ -5,7 +5,7 @@ const mime = require("mime-types");
 const readDirRecursive = require("./utils/readDirRecursive");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { Kafka } = require("kafkajs");
-const { publilishEvent } = require("./publisher");
+const { publishEvent } = require("./publisher");
 
 /* ---------------- ENV ---------------- */
 
@@ -75,7 +75,7 @@ async function publishLog(level, stage, message) {
         }),
       },
     ],
-  }).catch(() => {});
+  }).catch(() => { });
 }
 
 /* ---------------- SAFE EXIT ---------------- */
@@ -90,7 +90,7 @@ async function safeExit(code, reason) {
       await publishLog("INFO", "SHUTDOWN", reason);
     }
     await producer.disconnect();
-  } catch (_) {}
+  } catch (_) { }
   finally {
     process.exit(code);
   }
@@ -104,7 +104,7 @@ process.on("SIGTERM", () => safeExit(143, "SIGTERM"));
 async function init() {
   await producer.connect();
 
-  await publilishEvent(
+  await publishEvent(
     "FRONTEND_PROCESSING",
     PROJECT_ID,
     DEPLOYMENTID,
@@ -117,7 +117,7 @@ async function init() {
   const frontendPath = path.join(outputDir, FRONTENDPATH || ".");
 
   if (!fs.existsSync(frontendPath)) {
-    await publilishEvent(
+    await publishEvent(
       "FRONTEND_BUILT_FAILED",
       PROJECT_ID,
       DEPLOYMENTID,
@@ -138,7 +138,7 @@ async function init() {
 
   build.on("close", async (code) => {
     if (code !== 0) {
-      await publilishEvent(
+      await publishEvent(
         "FRONTEND_BUILT_FAILED",
         PROJECT_ID,
         DEPLOYMENTID,
@@ -168,7 +168,7 @@ async function init() {
         }));
       }
 
-      await publilishEvent(
+      await publishEvent(
         "FRONTEND_BUILT_SUCCESS",
         PROJECT_ID,
         DEPLOYMENTID,
@@ -179,7 +179,7 @@ async function init() {
       await safeExit(0, "Success");
 
     } catch (err) {
-      await publilishEvent(
+      await publishEvent(
         "FRONTEND_BUILT_FAILED",
         PROJECT_ID,
         DEPLOYMENTID,
@@ -191,7 +191,7 @@ async function init() {
 }
 
 init().catch(async (err) => {
-  await publilishEvent(
+  await publishEvent(
     "FRONTEND_BUILT_FAILED",
     PROJECT_ID,
     DEPLOYMENTID,
@@ -203,7 +203,7 @@ init().catch(async (err) => {
 /* ---------------- TIMEOUT ---------------- */
 
 setTimeout(async () => {
-  await publilishEvent(
+  await publishEvent(
     "FRONTEND_BUILT_FAILED",
     PROJECT_ID,
     DEPLOYMENTID,

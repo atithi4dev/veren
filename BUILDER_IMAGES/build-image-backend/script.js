@@ -2,7 +2,7 @@ const { spawn } = require("child_process")
 const path = require("path");
 const fs = require("fs")
 const { Kafka } = require("kafkajs");
-const { publilishEvent } = require("./publisher");
+const { publishEvent } = require("./publisher");
 
 const PROJECT_ID = process.env.PROJECT_ID;
 const ECR_URI = process.env.ECR_URI;
@@ -85,7 +85,7 @@ async function init() {
         throw new Error(`Build context path does not exist: ${buildContext}`);
     }
 
-    publilishEvent("BACKEND_PROCESSING", PROJECT_ID, DEPLOYMENTID, { backendDir: BACKEND_DIR })
+    publishEvent("BACKEND_PROCESSING", PROJECT_ID, DEPLOYMENTID, { backendDir: BACKEND_DIR })
 
 
     if (!NODE_VERSION) {
@@ -154,7 +154,7 @@ async function init() {
                 "BUILD",
                 `Image build failed with code: ${code}`
             );
-            publilishEvent("BACKEND_BUILD_FAILED", PROJECT_ID, DEPLOYMENTID, { msg: "Image build failed with code: ${code}" })
+            publishEvent("BACKEND_BUILD_FAILED", PROJECT_ID, DEPLOYMENTID, { msg: `Image build failed with code: ${code}` })
             await safeExit(code, "Build failed");
         }
     });
@@ -163,7 +163,7 @@ async function init() {
 init().catch(err => {
     console.log("INIT ERROR ", err);
     publishLog("FAILURE", "INIT", err.message)
-    publilishEvent("BACKEND_BUILD_FAILED", PROJECT_ID, DEPLOYMENTID, { msg: err.message })
+    publishEvent("BACKEND_BUILD_FAILED", PROJECT_ID, DEPLOYMENTID, { msg: err.message })
         .finally(() => safeExit(1, "Build Init Failed"));
 });;
 

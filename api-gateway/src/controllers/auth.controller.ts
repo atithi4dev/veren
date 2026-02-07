@@ -120,8 +120,8 @@ const getMe = asyncHandler(async (req: Request, res: Response) => {
     }
     let user = await User.findById(req.user.id).select(
         "name userName email avatar provider createdAt"
-    );;
-    
+    );
+
     if (!user) {
         return res.status(404).json(
             new ApiResponse(404, null, "User not found")
@@ -133,35 +133,33 @@ const getMe = asyncHandler(async (req: Request, res: Response) => {
     );
 });
 
-const refreshAccessToken = asyncHandler(async (req:Request, res: Response)=>{
-    let incomingRefreshToken =req.cookies.refreshToken;
-    if(!incomingRefreshToken){
+const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
+    let incomingRefreshToken = req.cookies.refreshToken;
+    if (!incomingRefreshToken) {
         throw new ApiError(401, "Refresh Token is required");
     }
 
     try {
         const decodedToken = jwt.verify(
-            incomingRefreshToken, 
+            incomingRefreshToken,
             process.env.REFRESH_TOKEN_SECRET!
-        ) as {tokenVersion: number, sub: string};
+        ) as { tokenVersion: number, sub: string };
 
         const user = await User.findById(decodedToken?.sub);
-        if(!user){
+        if (!user) {
             throw new ApiError(404, "Invalid refresh Token");
         }
 
-        if(decodedToken?.tokenVersion! != user?.tokenVersion){
+        if (decodedToken?.tokenVersion! != user?.tokenVersion) {
             throw new ApiError(404, "Invalid Refresh Token");
         }
 
-        const options = {
 
-        }
         const newRefreshToken = user.generateRefreshToken();
         const newAccessToken = user.generateAccessToken();
 
         setAuthCookies(res, newAccessToken, newRefreshToken);
-        res.status(200).json(new ApiResponse(200, {newAccessToken, newRefreshToken}, "Refresh token generated successfully"));
+        res.status(200).json(new ApiResponse(200, { newAccessToken, newRefreshToken }, "Refresh token generated successfully"));
     } catch (error) {
         throw new ApiError(404, "Failed to refresh refresh-token");
     }
