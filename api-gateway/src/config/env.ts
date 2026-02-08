@@ -10,12 +10,12 @@ const envSchema = z.object({
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
 
     // Database
-    MONGO_CONN_STRING: z.string().url().default("mongodb://localhost:27017/verenDB"),
+    MONGO_CONN_STRING: z.url().default("mongodb://localhost:27017/verenDB"),
 
     // AWS / Queue
     AWS_ACCESS_KEY_ID: z.string().min(1, "AWS_ACCESS_KEY_ID is required"),
     AWS_SECRET_ACCESS_KEY: z.string().min(1, "AWS_SECRET_ACCESS_KEY is required"),
-    SERVICE_QUEUE_URL: z.string().url().min(1, "SERVICE_QUEUE_URL is required"),
+    SERVICE_QUEUE_URL: z.url(),
     REDIS_HOST: z.string().default("internal-redis"),
 
     // Auth / Secrets
@@ -26,7 +26,7 @@ const envSchema = z.object({
     SESSION_SECRET: z.string().default("default_secret"),
 
     // Frontend
-    FRONTEND_URL: z.string().url().min(1, "FRONTEND_URL is required"),
+    FRONTEND_URL: z.url(),
     CORS_ORIGIN: z.string().default("*"),
 });
 
@@ -34,10 +34,14 @@ const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
     console.error("❌ Invalid environment variables:");
-    const flattenErrors = parsed.error.flatten().fieldErrors;
-    Object.entries(flattenErrors).forEach(([key, value]) => {
-        console.error(`- ${key}: ${value}`);
+    const { fieldErrors } = z.flattenError(parsed.error);
+    Object.entries(fieldErrors).forEach(([key, value]) => {
+        if (value?.length) {
+            console.error(`- ${key}: ${value.join(", ")}`);
+        }
     });
+
+
     process.exit(1);
 }
 

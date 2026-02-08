@@ -11,9 +11,6 @@ COPY api-gateway ./api-gateway
 
 RUN npm install --workspaces --legacy-peer-deps
 
-# Build the domain package first
-RUN npm run build -w @veren/domain
-
 # Build the workspace you care about
 RUN npm run build --workspace=api-gateway
 
