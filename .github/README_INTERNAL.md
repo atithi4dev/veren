@@ -36,23 +36,27 @@ The GitHub automation system provides:
 - ✅ `perf/issue-202-optimization`
 
 ### 2. `issue-assignment.yml`
-**Purpose:** Manage issue assignment via `/assign` command
+**Purpose:** Manage issue assignment via `/assign` command (maintainers only)
 
 **Triggers:** `issue_comment` (created, edited)
 
 **Jobs:**
 - `assign-issue` - Processes `/assign @username` commands in issue comments
-  - Validates GitHub user exists
+  - **Validates authorization** (only maintainers can assign)
   - Assigns issue to mentioned user
   - Adds 'assigned' label
   - Posts confirmation comment
 - `prevent-auto-assignment` - Removes any auto-assignments when issue is created
-  - Explains `/assign` command requirement
+  - Prevents accidental assignments
+  - Directs contributors to request assignment
 
-**Usage:**
+**Usage (Maintainers Only):**
 ```
 /assign @github-username
 ```
+
+**For Contributors:**
+Comment expressing interest on an issue, then wait for a maintainer to use the `/assign` command.
 
 ### 3. `auto-manage-labels.yml`
 **Purpose:** Automatically create and manage repository labels
@@ -109,7 +113,7 @@ The GitHub automation system provides:
 ### 4. `code-quality.yml`
 **Purpose:** Verify code quality, run tests, and security audits
 
-**Triggers:** `pull_request` (all branches), `push` (develop branch)
+**Triggers:** `pull_request` (all branches), `push` (test branch)
 
 **Jobs:**
 - `lint-and-type-check` - Checks TypeScript compilation for all services
@@ -145,7 +149,7 @@ The GitHub automation system provides:
   - Type of Change section
   - Checklist
 
-- `prevent-direct-pushes` - Enforces PRs target `develop` branch, not `main`
+- `prevent-direct-pushes` - Enforces PRs target `test` branch, not `main`
 
 - `require-issue-assignment` - Verifies referenced issue is assigned to someone
 
@@ -169,13 +173,23 @@ Templates for different issue types:
 
 ## Getting Started as a Contributor
 
-### Step 1: Assignment
-Create an issue (or find an existing one) and request assignment:
+### Step 1: Request Assignment
+Find an issue you want to work on and comment expressing interest:
+```
+I'd like to work on this issue
+```
+
+**Wait for maintainer to assign it to you.**
+
+### Step 2: Official Assignment
+The maintainer will review your request and use:
 ```
 /assign @your-github-username
 ```
 
-### Step 2: Branch Creation
+**Once assigned (you'll see the 'assigned' label), you're ready to start!**
+
+### Step 3: Branch Creation
 Create a branch following the naming convention:
 ```bash
 git checkout -b feature/issue-123-brief-description
@@ -183,14 +197,14 @@ git checkout -b feature/issue-123-brief-description
 git checkout -b fix/issue-456-bug-fix-description
 ```
 
-### Step 3: Development
+### Step 4: Development
 Make your changes and commit with proper message format:
 ```bash
 git commit -m "feat(issue-123): add new feature"
 git commit -m "fix(issue-456): fix the bug"
 ```
 
-### Step 4: Push & Create PR
+### Step 5: Push & Create PR
 ```bash
 git push origin feature/issue-123-brief-description
 ```
@@ -201,7 +215,7 @@ GitHub Actions will automatically:
 - ✅ Run security audits
 - ✅ Verify metadata and formatting
 
-### Step 5: Review
+### Step 6: Review
 Respond to feedback and update your PR as needed. The workflows will re-run automatically.
 
 ## Viewing Workflow Status
@@ -214,12 +228,12 @@ Respond to feedback and update your PR as needed. The workflows will re-run auto
 ## Troubleshooting Common Issues
 
 ### "PR targets main branch"
-❌ **Problem:** You opened a PR to `main` instead of `develop`
+❌ **Problem:** You opened a PR to `main` instead of `test`
 
 ✅ **Solution:**
 1. Close this PR
-2. Create a new PR to the `develop` branch
-3. Follow the workflow for releases from `develop` → `main`
+2. Create a new PR to the `test` branch
+3. Follow the workflow for releases from `test` → `main`
 
 ### "Commit message doesn't match format"
 ❌ **Problem:** Commit message like `"fixed bug"` or `"Update stuff"`
@@ -266,7 +280,7 @@ To manually trigger label setup without waiting for issue event:
 1. Go to **Actions** tab
 2. Select **Auto-Manage Labels** workflow
 3. Click **Run workflow**
-4. Select branch (usually `develop`)
+4. Select branch (usually `test`)
 5. Click **Run workflow**
 
 ## Security Considerations
@@ -348,7 +362,7 @@ To improve workflows or governance:
 1. Create an issue describing the improvement
 2. Get assigned via `/assign`
 3. Make changes to `.github/` (including workflows, templates, or SECURITY.md)
-4. Create PR to `develop` branch
+4. Create PR to `test` branch
 5. Reference the issue
 6. Get review and merge
 
