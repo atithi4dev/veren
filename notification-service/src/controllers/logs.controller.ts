@@ -93,7 +93,7 @@ export default async function initkafkaConsumer() {
             }
 
             buffer.push({
-                event_id: payload.even,
+                event_id: payload.event_id,
                 deployment_id: payload.deployment_id,
                 project_id: payload.project_id,
                 topic,

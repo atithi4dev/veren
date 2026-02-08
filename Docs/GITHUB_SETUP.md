@@ -63,7 +63,7 @@ git commit -m "fix(issue-456): fix the bug"
 
 ### Creating a PR
 1. Push your branch
-2. Open PR to `test` branch (NOT `main`)
+2. Open PR to `develop` branch (NOT `main`)
 3. Fill PR template with all required sections
 4. Reference the issue with "Closes #123"
 
@@ -71,7 +71,7 @@ git commit -m "fix(issue-456): fix the bug"
 
 ### Branch Protection
 - ❌ Cannot push directly to `main`
-- ✅ All changes must go through `test` branch
+- ✅ All changes must go through `develop` branch
 - ✅ PRs must follow branch naming convention
 
 ### Commit Requirements
@@ -183,7 +183,7 @@ Workflows automatically post helpful comments explaining:
 
 ### Scenario 1: Wrong target branch
 **Problem:** Opened PR to main
-**Solution:** Close PR, create new one to test branch
+**Solution:** Close PR, create new one to develop branch
 
 ### Scenario 2: Bad commit message  
 **Problem:** `git commit -m "fixed stuff"`
@@ -209,7 +209,7 @@ The governance system is now fully configured. Next steps:
 ## 🎯 Goals Achieved
 
 ✅ Prevent direct main branch pushes
-✅ Enforce test branch workflow
+✅ Enforce develop branch workflow
 ✅ Require PR review and validation
 ✅ Automate issue assignment (via /assign)
 ✅ Add comprehensive labels system
