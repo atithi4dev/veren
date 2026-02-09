@@ -33,7 +33,7 @@ jobs:
                 issue_number: pr.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: `✅ **Authorized Release PR** - @${prAuthor} is authorized to merge to \`main\`.\n\n⚠️ **Important:** Ensure this has been tested in \`test\` branch first!`
+                body: `✅ **Authorized Release PR** - @${prAuthor} is authorized to merge to \`main\`.\n\n⚠️ **Important:** Ensure this has been tested in \`develop\` branch first!`
               });
               return;
             }
@@ -43,7 +43,7 @@ jobs:
               issue_number: pr.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `🚫 **Branch Protection:** This PR targets \`main\`. All changes must go through the \`test\` branch first.\n\n**Action Required:**\n1. Close this PR\n2. Create a new PR targeting the \`test\` branch\n3. Once merged to \`test\`, create a release PR from \`test\` to \`main\`\n\n**Note:** Only authorized admins can create PRs directly to \`main\`.\n\nSee [CONTRIBUTING.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/Docs/CONTRIBUTING.md) for details.`
+              body: `🚫 **Branch Protection:** This PR targets \`main\`. All changes must go through the \`develop\` branch first.\n\n**Action Required:**\n1. Close this PR\n2. Create a new PR targeting the \`develop\` branch\n3. Once merged to \`develop\`, create a release PR from \`develop\` to \`main\`\n\n**Note:** Only authorized admins can create PRs directly to \`main\`.\n\nSee [CONTRIBUTING.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/Docs/CONTRIBUTING.md) for details.`
             });
             core.setFailed('Unauthorized PR to main branch');
             process.exit(1);

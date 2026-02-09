@@ -32,6 +32,7 @@ Before submitting, please ensure:
 - [ ] New and existing unit tests passed locally
 - [ ] My branch name follows the pattern: `feature/issue-<num>-<description>` or `fix/issue-<num>-<description>`
 - [ ] My commits are well-formatted with descriptive messages (e.g., `feat(issue-45): add new feature`)
+- [ ] **This PR targets the `develop` branch** (not `main` - only repository owners can merge to `main`)
 - [ ] I assigned myself to the related issue using `/assign @username` in the issue discussion (NOT in this PR)
 
 ## Related Issues or Discussions

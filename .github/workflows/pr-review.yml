@@ -127,7 +127,7 @@ jobs:
 
   prevent-direct-pushes:
     runs-on: ubuntu-latest
-    name: Enforce Test Branch
+    name: Enforce Develop Branch
     permissions:
       contents: read
       pull-requests: write

@@ -86,10 +86,10 @@ Veren is a **backend-driven deployment system** that automates building and depl
    - Create a **feature branch** from `main` (e.g., `feature/issue-123-brief-description`)
    - Make commits with **conventional commit messages**
    - Push to your fork or branch
-   - Create a **Pull Request** with clear description linking the issue
+   - Create a **Pull Request** to the `develop` branch with clear description linking the issue
    - Wait for **at least 1 code review**
    - ❌ **DO NOT** force push or directly merge to main
-   - ❌ **DO NOT** make PRs to main before discussion in the issue
+   - ❌ **DO NOT** make PRs to main; use `develop` for contributor PRs
 
 #### 6. **Communication Guidelines**
    - Be **respectful and professional**
