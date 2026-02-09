@@ -32,3 +32,12 @@ async function RetryDbCall() {
     logger.info(`Max retries for mongodb acchived, Exiting with 0`);
     process.exit(1);
 }
+
+export const disconnectDB = async () => {
+    try {
+        await mongoose.disconnect();
+        logger.info("Disconnected from mongodb");
+    } catch (error) {
+        logger.error("Error disconnecting from mongodb", error);
+    }
+}
