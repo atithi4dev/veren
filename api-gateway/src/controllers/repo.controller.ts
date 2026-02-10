@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import logger from "../logger/logger.js";
 
 export async function getAllRepositoryOfCurrentUser(req: Request, res: Response) {
 
@@ -44,7 +45,7 @@ export async function getAllRepositoryOfCurrentUser(req: Request, res: Response)
         })
 
     } catch (error: any) {
-        console.error(error);
+        logger.error("Error fetching Github repos", { error: error });
         res.status(500).json({
             success: false,
             message: "Error fetching Github repos",
@@ -219,7 +220,7 @@ export async function repoFinder(req: Request, res: Response) {
         return res.json(dedup(publicRepos));
 
     } catch (err) {
-        console.error(err);
+        logger.error("Server error in repo finder", { error: err });
         return res.status(500).json({ error: "Server error" });
     }
 }

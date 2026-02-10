@@ -1,5 +1,6 @@
 import { Queue } from 'bullmq';
 import {Redis} from 'ioredis';
+import logger from "../logger/logger.js";
 const connection = new Redis({
     host:process.env.REDIS_HOST || "internal-redis",
     port: 6379
@@ -7,4 +8,4 @@ const connection = new Redis({
 
 export const buildQueue = new Queue('buildQueue', { connection });
 // await buildQueue.obliterate({ force: true });
-console.log("Queue cleared!");
+logger.info("Build queue initialized");

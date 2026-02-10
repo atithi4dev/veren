@@ -3,6 +3,7 @@ import User from "../models/user.model.js";
 import ApiError from "../utils/api-utils/ApiError.js";
 import asyncHandler from "../utils/api-utils/asyncHandler.js";
 import { Request, Response, NextFunction } from "express";
+import logger from "../logger/logger.js";
 
 interface AuthRequest extends Request {
   user?: {
@@ -17,11 +18,11 @@ export const verifyJwt = asyncHandler(
     const token =
       req.cookies?.accessToken ||
       req.headers.authorization?.split(" ")[1];
-console.log(req.cookies, req.headers)
+    logger.debug("Checking authentication", { cookies: req.cookies, headers: req.headers });
     if (!token) {
       throw new ApiError(401, "No access token provided");
     }
-console.log(req.cookies, req.headers)
+    logger.debug("Checking authentication", { cookies: req.cookies, headers: req.headers });
     const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
     if (!ACCESS_TOKEN_SECRET) {
       throw new ApiError(500, "Access token secret not configured");
@@ -41,7 +42,7 @@ console.log(req.cookies, req.headers)
     if (!user) {
       throw new ApiError(404, "User not found");
     }
-    console.log(user);
+    logger.debug("Authenticated user", { user: user._id });
     req.user = {
       id: user._id.toString(),
       provider: user.provider,

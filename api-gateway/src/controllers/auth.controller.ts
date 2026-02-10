@@ -10,6 +10,7 @@ import User from "../models/user.model.js";
 import ApiResponse from "../utils/api-utils/ApiResponse.js";
 import { verifyJwt } from "../middlewares/auth.middlewares.js";
 import jwt from "jsonwebtoken";
+import logger from "../logger/logger.js";
 
 // LOGIN CONTROLLER
 const LoginController = asyncHandler(async (req: Request, res: Response) => {
@@ -70,7 +71,7 @@ const CallbackController = asyncHandler(async (req: Request, res: Response) => {
 
     } catch (err: any) {
         if (err instanceof ApiError) throw err;
-        console.error(err);
+        logger.error("GitHub OAuth Error", { error: err });
         throw new ApiError(500, "GitHub OAuth Error");
     }
 
@@ -98,9 +99,9 @@ const logOutController = asyncHandler(async (req: Request, res: Response) => {
     }
 
     // Destroy session
-    req.session.destroy(err => {
+    req.session.destroy((err: any) => {
         if (err) {
-            console.error("Error while destroying session: ", err);
+            logger.error("Error while destroying session: ", { error: err });
         }
     });
 

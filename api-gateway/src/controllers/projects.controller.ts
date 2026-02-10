@@ -3,6 +3,7 @@ import {Project, IProject} from "@veren/domain";
 import ApiError from "../utils/api-utils/ApiError.js";
 import ApiResponse from "../utils/api-utils/ApiResponse.js";
 import asyncHandler from "../utils/api-utils/asyncHandler.js";
+import logger from "../logger/logger.js";
 
 /* THIS IS ONLY ACCESIBLE TO FRONTEND USER */
 const createProject = asyncHandler(async (req: Request, res: Response) => {
@@ -63,17 +64,17 @@ const createProject = asyncHandler(async (req: Request, res: Response) => {
         project = await Project.create(projectData)
     } catch (error: any) {
         if (error.code == 11000) {
-            console.log("INSIDE MONGO ERROR CATCHED", error.message)
+            logger.error("MongoDB duplicate key error", { message: error.message });
             return res.status(409).json({
                 error: "Project name already taken"
             })
         }
-        console.log("INSIDE MONGO ERROR CATCHED", error.message)
+        logger.error("MongoDB error in project creation", { message: error.message });
         throw new ApiError(500, "Internal server error");
     }
 
     if (!project) {
-        console.log("Not of project error")
+        logger.error("Project creation failed - no project returned");
         throw new ApiError(500, "Unable to Create Project At the moment.");
     }
 

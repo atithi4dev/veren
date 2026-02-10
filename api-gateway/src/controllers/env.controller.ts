@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import asyncHandler from "../utils/api-utils/asyncHandler.js";
 import ApiError from "../utils/api-utils/ApiError.js";
 import {Project} from "@veren/domain";
+import logger from "../logger/logger.js";
 
 const updateEnv = asyncHandler(async (req: Request, res: Response) => {
     const { projectId } = req.params;
@@ -34,7 +35,7 @@ const updateEnv = asyncHandler(async (req: Request, res: Response) => {
         return res.status(200).json(updatedProject);
 
     } catch (error) {
-        console.error(error);
+        logger.error("Server error updating environment variables", { error: error });
         return res.status(500).json({ message: "Server error" });
     }
 })

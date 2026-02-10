@@ -1,3 +1,5 @@
+import logger from "../../logger/logger.js";
+
 export async function folderCheck(repoUrl: string, path: string, branch = "main") {
     try {
         const url = new URL(repoUrl);
@@ -29,6 +31,6 @@ export async function folderCheck(repoUrl: string, path: string, branch = "main"
         // Lol i will surely remove it , PINKY PROMISE HAHAHAHAHAHHA!
         return true;
     } catch (error: any) {
-        console.error("Error checking folder:", error);
+        logger.error("Error checking folder:", { error });
     }
 }

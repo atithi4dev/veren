@@ -7,6 +7,7 @@ import {
 import { repoAnalysisSuccessHandler } from "./controllers/internalService.controller.js";
 
 import dotenv from 'dotenv';
+import logger from "./logger/logger.js";
 dotenv.config();
 
 const sqs = new SQSClient({
@@ -33,7 +34,7 @@ export async function pollQueue() {
 
     for (const msg of res.Messages) {
         try {
-            console.log('Received:', msg.Body);
+            logger.info('Received message from SQS:', { body: msg.Body });
 
             const event = JSON.parse(msg.Body!);
 
@@ -46,7 +47,7 @@ export async function pollQueue() {
                 })
             );
         } catch (err) {
-            console.error("Processing failed:", err);
+            logger.error("SQS message processing failed:", { error: err });
         }
     }
 }
@@ -87,14 +88,14 @@ async function handleEvent(event: any) {
 async function onRepoAnalysisSuccess(event: any) {
     const { projectId, deploymentId } = event;
     const { commitHash, commitMessage, config } = event.payload
-    console.log(projectId, deploymentId, commitHash, commitMessage);
+    logger.info("Repo analysis success event received", { projectId, deploymentId, commitHash, commitMessage });
     repoAnalysisSuccessHandler(projectId, config, deploymentId, commitHash, commitMessage)
-    console.log("onRepoAnalysisSuccess");
+    logger.debug("Processing repo analysis success event");
 }
 
 async function AnalysisFailed(event: any) {
     // update stage of deployment to failed + frontend udpate with issue
-    console.log("AnalysisFailed");
+    logger.info("Repo analysis failed event received");
 }
 
 /* ---------------- PRE BUILD QUEUE STAGE ---------------- */

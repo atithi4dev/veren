@@ -17,12 +17,12 @@ async function init() {
 
     // Start SQS polling concurrently
     (async function pollLoop() {
-        console.log("Polling SQS...");
+        logger.info("Starting SQS polling...");
         while (true) {
             try {
                 await pollQueue();
             } catch (err) {
-                console.error("Polling error:", err);
+                logger.error("SQS polling error:", { error: err });
             }
         }
     })();

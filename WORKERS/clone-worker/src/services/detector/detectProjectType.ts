@@ -1,5 +1,6 @@
 import path from "path";
 import fs from "fs";
+import logger from "../../../logger/logger.js";
 
 // Types
 interface PackageJSON {
@@ -68,7 +69,7 @@ export function detectNodeVersion(projectDir: string): string {
                 return resolveEngineRange(pkg.engines.node);
             }
         } catch (err) {
-            console.warn("Error parsing package.json:", err);
+            logger.warn("Error parsing package.json:", { error: err });
         }
     }
 

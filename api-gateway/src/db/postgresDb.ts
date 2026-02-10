@@ -1,4 +1,5 @@
 import { Pool, Client } from 'pg';
+import logger from "../logger/logger.js";
 
 const user = process.env.POSTGRES_USER
 const password = process.env.POSTGRES_PASSWORD
@@ -21,7 +22,7 @@ async function testConnection() {
     try {
 
     } catch (error) {
-        console.error('Error connecting to the POSTGRES:', error);
+        logger.error('Error connecting to the POSTGRES:', { error });
     }
 }
 

@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import axios from "axios";
+import logger from "../logger/logger.js";
 
 // HANDLE URL PATH (FORWARD FOR PREPROCESSING)
 export async function RouteHandler(req: Request, res: Response) {
@@ -10,7 +11,7 @@ export async function RouteHandler(req: Request, res: Response) {
       { timeout: 10000 }
     );
     
-    console.log("Response from router service:", response.data);
+    logger.info("Response from router service:", { data: response.data });
 
     return res.json({
       success: true,
