@@ -21,6 +21,11 @@ app.use(express.urlencoded({extended: true, limit: '16kb'}))
 app.use(cookieParser()); 
 app.use(express.static('public'));
 
+
+// BUILD_QUEUE_SUCCESS Handle 
+
+// FRONTEND_BUILD_SUCCESS Handle 
+
 app.use(errorHandler)
 
 export default app;

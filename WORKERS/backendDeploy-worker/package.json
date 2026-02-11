@@ -1,0 +1,21 @@
+{
+  "name": "backenddeploy-worker",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/workers/build.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "bullmq": "^5.67.3",
+    "dotenv": "^17.2.4",
+    "ioredis": "^5.9.2"
+  }
+}

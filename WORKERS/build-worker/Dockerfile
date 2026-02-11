@@ -1,4 +1,3 @@
-# Base image
 FROM node:20-bullseye
 
 WORKDIR /app

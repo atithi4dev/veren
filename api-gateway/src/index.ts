@@ -17,7 +17,7 @@ async function init() {
 
     // Start SQS polling concurrently
     (async function pollLoop() {
-        console.log("Polling SQS...");
+        logger.info("Polling SQS...");
         while (true) {
             try {
                 await pollQueue();

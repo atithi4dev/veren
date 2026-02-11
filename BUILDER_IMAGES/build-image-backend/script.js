@@ -147,6 +147,12 @@ async function init() {
                 "BUILD",
                 `Image built and pushed: ${imageTag}`
             );
+            
+            publishEvent("BACKEND_BUILD_SUCCESS", PROJECT_ID, DEPLOYMENTID, { 
+                msg: "Image has built successfully",  
+                imageTag: imageTag
+            })
+
             await safeExit(0, "Build success");
         } else {
             await publishLog(

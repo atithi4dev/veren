@@ -86,6 +86,10 @@ const projectSchema = new Schema<IProject>({
             type: String,
             default: "npm install"
         },
+        backendStartCommand: {
+            type: String,
+            default: "npm start"
+        },
         frontendOutDir: {
             type: String,
             default: "./build"
