@@ -53,7 +53,7 @@ const userSchema = new Schema<IUser>({
 
 userSchema.methods.generateAccessToken = function ():string {
     const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET
-    const ACCESS_TOKEN_EXPIRY = "15m";
+    const ACCESS_TOKEN_EXPIRY = "7d";
     
     if (!ACCESS_TOKEN_SECRET) {
         throw new Error("Access Token is not defined");

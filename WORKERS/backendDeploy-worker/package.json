@@ -14,8 +14,14 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@aws-sdk/client-ecs": "^3.987.0",
+    "@aws-sdk/types": "^3.973.1",
+    "@types/morgan": "^1.9.10",
+    "@types/winston": "^2.4.4",
     "bullmq": "^5.67.3",
     "dotenv": "^17.2.4",
-    "ioredis": "^5.9.2"
+    "ioredis": "^5.9.2",
+    "morgan": "^1.10.1",
+    "winston": "^3.19.0"
   }
 }

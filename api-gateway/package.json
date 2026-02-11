@@ -9,6 +9,7 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@aws-sdk/client-ecr": "^3.987.0",
     "@aws-sdk/client-sns": "^3.978.0",
     "@aws-sdk/client-sqs": "^3.978.0",
     "@types/bcrypt": "^6.0.0",

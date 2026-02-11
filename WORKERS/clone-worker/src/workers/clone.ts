@@ -109,7 +109,7 @@ export const worker = new Worker<CloneJobData, CloneJobResult>(
         cloneResult.backendDir
       );
 
-      if (config?.isConfig) {
+      if (!config?.isConfig) {
         throw new CloneJobError("Config generation failed", {
           msg: "repoConfigGenerator failed",
           metadata: { projectId, deploymentId },

@@ -7,8 +7,9 @@ import {
 import { repoAnalysisSuccessHandler } from "./controllers/internalService.controller.js";
 
 import dotenv from 'dotenv';
-import { Deployment, publishEvent } from "@veren/domain";
+import { Deployment, Project, publishEvent } from "@veren/domain";
 import { backendDeployQueue } from "./Queue/backendDeploy-queue.js";
+import ecrImageExistsCheck from "./utils/ecrCheck/ecrImageExistsCheck.js";
 dotenv.config();
 
 const sqs = new SQSClient({
@@ -190,35 +191,69 @@ async function backendBuildSuccess(event: any) {
     const { deploymentId, projectId } = event;
     const { imageTag } = event.payload;
 
+    const exist = await ecrImageExistsCheck(imageTag);
+    if (exist) {
+        const project = await Project.findById(projectId);
 
-    // BACKEND_BUILD_SUCCESS 
-    // if ecr image does not exist, make a call that backend Failed due to some internal issue, and this will be checked by orchestrate that will see if aws ecs is stll running, then close it. 
-    // else make a db call to get config needed for backend run and then pass all data to queue
-    await backendDeployQueue.add("backendDeployQueue", {
-        imageTag
-    }, {
-        attempts: 1,
-        backoff: {
-            type: "exponential",
-            delay: 1000
-        },
-        removeOnComplete: true,
-        removeOnFail: true
-    })
+        await backendDeployQueue.add("backendDeployQueue", {
+            deploymentId, 
+            projectId,
+            imageTag, 
+            installCommand: project?.build?.backendInstallCommand,
+            startCommand: project?.build?.backendStartCommand,
+            dirPath: project?.repoPath?.backendDirPath,
+            envs: project?.envs?.backendEnv
+        }, {
+            attempts: 1,
+            backoff: {
+                type: "exponential",
+                delay: 1000
+            },
+            removeOnComplete: true,
+            removeOnFail: true
+        })
 
-    await Deployment.findByIdAndUpdate(deploymentId, {
-        backendImageUrl: imageTag,
-    })
+        await Deployment.findByIdAndUpdate(deploymentId, {
+            backendImageUrl: imageTag,
+        })
+    } else {
+        // @support
+        // queue delete of current frontend deployment if exist
+        await Deployment.findByIdAndUpdate(deploymentId, {
+            status: "failed",
+            finishedAt: new Date(),
+            error: {
+                type: event.type,
+                message: `INTERNAL SERVER ERROR`,
+            }
+        })
+    }
+
 }
 async function frontendBuildFailed(event: any) {
-    // Inform User , Provide Error, 
-    // IF (backendSuccess){
-    // fallback to previous state, stop backend mid way if incomplete, else remove the image from ecr    
-    // }
+    const { deploymentId, payload } = event;
+
+    await Deployment.findByIdAndUpdate(deploymentId, {
+        status: "failed",
+        finishedAt: new Date(),
+        error: {
+            type: event.type,
+            message: payload.msg,
+        }
+    })
+    // queue delete of current backend deployment if exist
 }
 async function backendBuildFailed(event: any) {
-    // Inform user, Provide Error
-    // IF (frontendSuccess){
+    const { deploymentId, payload } = event;
+
+    await Deployment.findByIdAndUpdate(deploymentId, {
+        status: "failed",
+        finishedAt: new Date(),
+        error: {
+            type: event.type,
+            message: payload.msg,
+        }
+    })
+    // queue delete of current backend deployment if exist
     // fallback S3 object to previous state, remove pushed item, update db for s3 url
-    // }
 }
