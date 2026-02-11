@@ -27,6 +27,31 @@ docker compose up --build
 ```
 Now you are ready to visit [api-guidelines](https://github.com/atithi4dev/veren/blob/main/Docs/API_DOCUMENTATION.md) to access the differnt routes and supported features. 
 
+## Frontend Setup -
+
+**Prerequisites:**
+
+- **Node.js:** 20.x
+- **Package manager:** npm 10.8.2 (or newer 10.x)
+
+**Install and run the frontend locally:**
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+**Environment variables:**
+
+- No frontend environment variables are required for local development by default.
+
+**Local development URL:**
+
+- http://localhost:5173
+
+For more frontend details, see [frontend/README.md](frontend/README.md).
+
 ## Architecture Overview -
 
 **VEREN** is built as a cloud-native, backend-first deployment platform using a service-oriented architecture:
