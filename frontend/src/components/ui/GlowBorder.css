@@ -1,0 +1,44 @@
+.glow-border-anim {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem; /* matches rounded-xl */
+  pointer-events: none;
+  z-index: 5;
+}
+
+.glow-border-anim::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid transparent;
+  background: linear-gradient(90deg, #00d4ff, #0055ff, #00d4ff 100%) border-box;
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.group:hover .glow-border-anim::before {
+  opacity: 1;
+  animation: border-glow-anim 1.2s cubic-bezier(0.77,0,0.175,1) 1;
+}
+
+@keyframes border-glow-anim {
+  0% {
+    border-image: linear-gradient(90deg, #00d4ff 0%, transparent 100%) 1;
+  }
+  25% {
+    border-image: linear-gradient(180deg, #00d4ff 0%, transparent 100%) 1;
+  }
+  50% {
+    border-image: linear-gradient(270deg, #00d4ff 0%, transparent 100%) 1;
+  }
+  75% {
+    border-image: linear-gradient(360deg, #00d4ff 0%, transparent 100%) 1;
+  }
+  100% {
+    border-image: linear-gradient(450deg, #00d4ff 0%, transparent 100%) 1;
+  }
+}
