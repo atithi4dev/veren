@@ -6,6 +6,7 @@ import { errorHandler } from "./middlewares/error.middlewares.js";
 import httpProxy from "http-proxy";
 import healthCheckRouter from  './routes/healthCheck.route.js'
 import { subscriber } from "./socket.js";
+import logger from "./logger/logger.js";
 const app = express();
 
 app.use(morganMiddleware()); 
@@ -32,7 +33,7 @@ app.use((req,res)=>{
     const hostname = req.hostname;
     const subdomain = hostname.split('.')[0];
     const resolvesTo = `${BASEPATH}${subdomain}`
-    console.log(subdomain)
+    logger.info(subdomain)
 
     proxy.web(req,res,{target: resolvesTo,changeOrigin: true})
 })
@@ -48,18 +49,18 @@ proxy.on('proxyReq', (proxyReq, req, res)=>{
 const helper = async ()=>{
     await subscriber.connect();
     subscriber.on('error',()=>{
-        console.log(`Error connecting to Redis`);
+        logger.info(`Error connecting to Redis`);
     })
     
     // backend deployment check
     subscriber.pSubscribe('backend_builder_logs:*', (message, channel)=>{
-        console.log("CHANNEL : ", channel)
-        console.log("MESSAGE : ", message)
+        logger.info("CHANNEL : ", channel)
+        logger.info("MESSAGE : ", message)
     })
     // frontend deployment check
     subscriber.pSubscribe('logs:*', (message, channel)=>{
-        console.log("CHANNEL : ", channel)
-        console.log("MESSAGE : ", message)
+        logger.info("CHANNEL : ", channel)
+        logger.info("MESSAGE : ", message)
     })
 }
 helper();

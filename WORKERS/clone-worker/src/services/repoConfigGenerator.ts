@@ -13,7 +13,7 @@ interface DirPath {
 export interface IBuild {
     framework?: string;
     frontendBuildCommand?: string;
-    backendBuildCommand?: string;
+    backendStartCommand?: string;
     frontendInstallCommand?: string;
     backendInstallCommand?: string;
     frontendOutDir: string;

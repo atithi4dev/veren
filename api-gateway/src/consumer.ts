@@ -7,6 +7,8 @@ import {
 import { repoAnalysisSuccessHandler } from "./controllers/internalService.controller.js";
 
 import dotenv from 'dotenv';
+import { Deployment, publishEvent } from "@veren/domain";
+import { backendDeployQueue } from "./Queue/backendDeploy-queue.js";
 dotenv.config();
 
 const sqs = new SQSClient({
@@ -33,8 +35,6 @@ export async function pollQueue() {
 
     for (const msg of res.Messages) {
         try {
-            console.log('Received:', msg.Body);
-
             const event = JSON.parse(msg.Body!);
 
             await handleEvent(event);
@@ -62,20 +62,28 @@ async function handleEvent(event: any) {
             break;
         case "BUILD_QUEUE_SUCCESS":
             await buildQueueSuccess(event);
+            break;
         case "FRONTEND_QUEUE_FAILED":
             await frontendQueueFailed(event);
+            break;
         case "BACKEND_QUEUE_FAILED":
             await backendQueueFailed(event);
+            break;
         case "BUILD_UNKNOWN_FAILURE":
             await unknownIssue(event);
+            break;
         case "FRONTEND_BUILD_SUCCESS":
             await frontendBuildSuccess(event);
+            break;
         case "BACKEND_BUILD_SUCCESS":
             await backendBuildSuccess(event)
+            break;
         case "FRONTEND_BUILD_FAILED":
             await frontendBuildFailed(event);
+            break;
         case "BACKEND_BUILD_FAILED":
             await backendBuildFailed(event);
+            break;
         default:
             // ignore
             break;
@@ -86,45 +94,121 @@ async function handleEvent(event: any) {
 
 async function onRepoAnalysisSuccess(event: any) {
     const { projectId, deploymentId } = event;
-    const { commitHash, commitMessage, config } = event.payload
-    console.log(projectId, deploymentId, commitHash, commitMessage);
-    repoAnalysisSuccessHandler(projectId, config, deploymentId, commitHash, commitMessage)
-    console.log("onRepoAnalysisSuccess");
+    const { commitHash, commitMessage, config } = event.payload;
+
+    await repoAnalysisSuccessHandler(projectId, config, deploymentId, commitHash, commitMessage);
 }
 
 async function AnalysisFailed(event: any) {
-    // update stage of deployment to failed + frontend udpate with issue
-    console.log("AnalysisFailed");
+    const { deploymentId, payload } = event;
+    await Deployment.findByIdAndUpdate(deploymentId, {
+        status: "failed",
+        finishedAt: new Date(),
+        error: {
+            type: event.type,
+            message: payload?.source === "INTERNAL" ? `INTERNAL SERVER ERROR : ${payload.msg}` : payload?.msg,
+        }
+    })
+
 }
 
 /* ---------------- PRE BUILD QUEUE STAGE ---------------- */
 
 async function buildQueueSuccess(event: any) {
-    // update deploying to please stay tuned , build may take a while depending upon network 
-    // provide arn to notification service, to start passing logs to frontend through WS    
+    const { projectId, deploymentId } = event;
+    const { frontendTaskArn, backendTaskArn } = event.payload;
+    await Deployment.findByIdAndUpdate(deploymentId, {
+        status: "building",
+        frontendTaskArn,
+        backendTaskArn,
+    });
+
 }
 
 async function frontendQueueFailed(event: any) {
-    // Notify user about INTERNAL SERVER ERROR , Please wait while we resolve the issue
     // Notify @supoort for the same
+
+    const { deploymentId, payload } = event;
+    await Deployment.findByIdAndUpdate(deploymentId, {
+        status: "failed",
+        finishedAt: new Date(),
+        error: {
+            type: event.type,
+            message: `INTERNAL SERVER ERROR : ${payload.msg}`,
+        }
+    })
 }
 
 async function backendQueueFailed(event: any) {
-    // Notify user about INTERNAL SERVER ERROR , Please wait while we resolve the issue
     // Notify @supoort for the same
+
+    const { deploymentId, payload } = event;
+    await Deployment.findByIdAndUpdate(deploymentId, {
+        status: "failed",
+        finishedAt: new Date(),
+        error: {
+            type: event.type,
+            message: `INTERNAL SERVER ERROR : ${payload.msg}`,
+        }
+    })
 }
 
 async function unknownIssue(event: any) {
-    // Inform user
+    // Notify @supoort for the same
+
+    const { deploymentId, payload } = event;
+    await Deployment.findByIdAndUpdate(deploymentId, {
+        status: "failed",
+        finishedAt: new Date(),
+        error: {
+            type: event.type,
+            message: `UNCATCHED ISSUE : ${payload.msg}`,
+        }
+    })
 }
 
 /* ---------------- ECS POST BUILD STAGE ---------------- */
 
 async function frontendBuildSuccess(event: any) {
-    // Inform orchestrate service
+    const { projectId, deploymentId, artifactUrl } = event;
+
+    const deployment = await Deployment.findById(deploymentId)
+    if (deployment?.rollBackArtifactUrl != "" || deployment?.rollBackArtifactUrl?.length != 0) {
+        const oldArtifact = deployment?.artifactUrl;
+        await Deployment.findByIdAndUpdate(deploymentId, {
+            artifactUrl,
+            rollBackArtifactUrl: oldArtifact
+        })
+    } else {
+        await Deployment.findByIdAndUpdate(deploymentId, {
+            artifactUrl,
+        })
+    }
 }
+
 async function backendBuildSuccess(event: any) {
-    // Inform orchestrate service
+    const { deploymentId, projectId } = event;
+    const { imageTag } = event.payload;
+
+
+    // BACKEND_BUILD_SUCCESS 
+    // if ecr image does not exist, make a call that backend Failed due to some internal issue, and this will be checked by orchestrate that will see if aws ecs is stll running, then close it. 
+    // else make a db call to get config needed for backend run and then pass all data to queue
+    await backendDeployQueue.add("backendDeployQueue", {
+        imageTag
+    }, {
+        attempts: 1,
+        backoff: {
+            type: "exponential",
+            delay: 1000
+        },
+        removeOnComplete: true,
+        removeOnFail: true
+    })
+
+    await Deployment.findByIdAndUpdate(deploymentId, {
+        backendImageUrl: imageTag,
+    })
 }
 async function frontendBuildFailed(event: any) {
     // Inform User , Provide Error, 

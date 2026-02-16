@@ -35,6 +35,9 @@ const deploymentSchema = new Schema<IDeployment>({
     backendImageUrl: {
         type: String
     },
+    backendECSContainerArn: {
+        type: String
+    },
     frontendTaskArn: {
         type: String
     },
@@ -50,6 +53,14 @@ const deploymentSchema = new Schema<IDeployment>({
     startedAt: {
         type: Date,
         default: Date.now
+    },
+    error: {
+        type: {
+            type: String
+        },
+        message: {
+            type: String
+        },
     },
     finishedAt: {
         type: Date,

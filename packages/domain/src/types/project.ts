@@ -39,8 +39,9 @@ export interface IProject {
         frontendInstallCommand?: string;
         backendInstallCommand?: string;
         frontendOutDir: string;
+        backendStartCommand: string
 
-    }
+    },
     runtime: {
         frontend: RuntimeConfig;
         backend: RuntimeConfig;

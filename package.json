@@ -3,6 +3,7 @@
   "workspaces": [
     "api-gateway",
     "WORKERS/clone-worker",
+    "WORKERS/backendDeploy-worker",
     "WORKERS/build-worker",
     "packages/*"
   ]

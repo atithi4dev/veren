@@ -13,8 +13,15 @@ export interface IDeployment {
     frontendTaskArn: string;
     backendTaskArn: string;
     backendImageUrl: string;
+    backendECSContainerArn: string;
     artifactUrl?: string;
+    error?: IError; 
     rollBackArtifactUrl?: string
     startedAt: Date;
     finishedAt?: Date;
+}
+
+interface IError {
+    type: string;
+    message: string;
 }

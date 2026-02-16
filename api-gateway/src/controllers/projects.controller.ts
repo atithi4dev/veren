@@ -3,6 +3,7 @@ import {Project, IProject} from "@veren/domain";
 import ApiError from "../utils/api-utils/ApiError.js";
 import ApiResponse from "../utils/api-utils/ApiResponse.js";
 import asyncHandler from "../utils/api-utils/asyncHandler.js";
+import logger from "../logger/logger.js";
 
 /* THIS IS ONLY ACCESIBLE TO FRONTEND USER */
 const createProject = asyncHandler(async (req: Request, res: Response) => {
@@ -15,6 +16,7 @@ const createProject = asyncHandler(async (req: Request, res: Response) => {
         frontendBuildCommand = "npm run build",
         frontendInstallCommand = "npm install",
         backendInstallCommand = "npm install",
+        backendStartCommand = "npm start",
         frontendOutDir = "./build",
     } = req.body;
 
@@ -38,6 +40,7 @@ const createProject = asyncHandler(async (req: Request, res: Response) => {
             frontendBuildCommand,
             frontendInstallCommand,
             backendInstallCommand,
+            backendStartCommand,
             frontendOutDir
         },
         runtime: {
@@ -63,17 +66,17 @@ const createProject = asyncHandler(async (req: Request, res: Response) => {
         project = await Project.create(projectData)
     } catch (error: any) {
         if (error.code == 11000) {
-            console.log("INSIDE MONGO ERROR CATCHED", error.message)
+            logger.info("INSIDE MONGO ERROR CATCHED", error.message)
             return res.status(409).json({
                 error: "Project name already taken"
             })
         }
-        console.log("INSIDE MONGO ERROR CATCHED", error.message)
+        logger.info("INSIDE MONGO ERROR CATCHED", error.message)
         throw new ApiError(500, "Internal server error");
     }
 
     if (!project) {
-        console.log("Not of project error")
+        logger.info("Not of project error")
         throw new ApiError(500, "Unable to Create Project At the moment.");
     }
 

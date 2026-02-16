@@ -1,6 +1,7 @@
 import {Request, Response} from 'express'
 import ApiResponse from '../utils/api-utils/ApiResponse.js'
 import Docker from 'dockerode'
+import logger from '../logger/logger.js';
 
 const docker = new Docker({ socketPath: "/var/run/docker.sock" });
 
@@ -23,7 +24,7 @@ export async function containerRouter(req: Request, res: Response){
     const imageName = `${image}:${tag}`;
 
     if(!imageAlreadyExist){
-        console.log(`Pulling Image: ${imageName}`);
+        logger.info(`Pulling Image: ${imageName}`);
         await docker.pull(imageName);
     }
 

@@ -2,6 +2,7 @@ import { createClient } from '@clickhouse/client'
 import path from "path";
 import fs from "fs";
 import { Kafka } from "kafkajs";
+import logger from '../logger/logger';
 
 const client = createClient({
     host: process.env.CLICKHOUSE_HOST,
@@ -62,7 +63,7 @@ async function flushToClickHouse() {
             format: 'JSONEachRow'
         });
     } catch (error) {
-        console.log(`Error while pushing to clickhouse`, error);
+        logger.info(`Error while pushing to clickhouse`, error);
 
         buffer = rows.concat(buffer).slice(0,10_000);
     } finally {
@@ -82,7 +83,7 @@ export default async function initkafkaConsumer() {
             const raw = message.value?.toString();
             if (!raw) return;
 
-            console.log(`[${topic}] ${message.offset}: ${raw}`);
+            logger.info(`[${topic}] ${message.offset}: ${raw}`);
 
             let payload;
             try {

@@ -17,11 +17,9 @@ export const verifyJwt = asyncHandler(
     const token =
       req.cookies?.accessToken ||
       req.headers.authorization?.split(" ")[1];
-console.log(req.cookies, req.headers)
     if (!token) {
       throw new ApiError(401, "No access token provided");
     }
-console.log(req.cookies, req.headers)
     const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
     if (!ACCESS_TOKEN_SECRET) {
       throw new ApiError(500, "Access token secret not configured");
@@ -41,7 +39,6 @@ console.log(req.cookies, req.headers)
     if (!user) {
       throw new ApiError(404, "User not found");
     }
-    console.log(user);
     req.user = {
       id: user._id.toString(),
       provider: user.provider,
