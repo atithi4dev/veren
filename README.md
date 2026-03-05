@@ -21,11 +21,14 @@ cd veren
 
 We assume you have already gone through the required configuration and added the necessary files as described in [@essentials](https://github.com/atithi4dev/veren/blob/main/Docs/GITHUB_SETUP.md) before starting the project.
 
+
 **Start the services using Docker Compose:**
 ```bash
-docker compose up --build
+docker compose -f docker-compose.dev.yml up --build
 ```
-Now you are ready to visit [api-guidelines](https://github.com/atithi4dev/veren/blob/main/Docs/API_DOCUMENTATION.md) to access the differnt routes and supported features. 
+> **Note:** The default command `docker compose up --build` will fail because there is no root-level `docker-compose.yml`. Make sure to specify the correct file as above.
+
+Now you are ready to visit [api-guidelines](https://github.com/atithi4dev/veren/blob/main/Docs/API_DOCUMENTATION.md) to access the different routes and supported features.
 
 ## Architecture Overview -
 
