@@ -1,21 +1,5 @@
-// Swagger/OpenAPI setup
-import swaggerUi from 'swagger-ui-express';
-import swaggerJSDoc from 'swagger-jsdoc';
 
-const swaggerOptions = {
-    definition: {
-        openapi: '3.0.0',
-        info: {
-            title: 'Veren API',
-            version: '1.0.0',
-            description: 'API documentation for Veren backend',
-        },
-    },
-    apis: ['./src/routes/*.ts'], // You can expand this to include more files
-};
 
-const swaggerSpec = swaggerJSDoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -23,6 +7,8 @@ import morganMiddleware from "./logger/indexLog.js";
 import { errorHandler } from "./middlewares/error.middlewares.js";
 import session from "express-session";
 import MongoStore from "connect-mongo";
+import swaggerUi from 'swagger-ui-express';
+import swaggerJSDoc from 'swagger-jsdoc';
 
 const app = express();
 

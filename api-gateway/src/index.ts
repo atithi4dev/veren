@@ -2,7 +2,7 @@ import app from "./app.js";
 import dotenv from "dotenv";
 import logger from "./logger/logger.js";
 import { connectDB } from "./db/index.js";
-import { pollQueue } from "./services/consumer.js";
+import { startQueueWorker } from "./services/consumer.js";
 import { purgeQueueOnStartup } from "./services/purgeQueue.js";
 
 dotenv.config({ path: './.env' });
@@ -18,17 +18,8 @@ async function init() {
         logger.info(`Server is running on port ${PORT}`);
     });
 
-    // Start SQS polling concurrently
-    (async function pollLoop() {
-        logger.info("Polling SQS...");
-        while (true) {
-            try {
-                await pollQueue();
-            } catch (err) {
-                console.error("Polling error:", err);
-            }
-        }
-    })();
+    // Start BullMQ worker for backendDeployQueue
+    startQueueWorker();
 }
 
 init();

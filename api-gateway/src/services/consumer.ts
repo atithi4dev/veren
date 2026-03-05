@@ -1,55 +1,34 @@
-import {
-    SQSClient,
-    ReceiveMessageCommand,
-    DeleteMessageCommand,
-} from "@aws-sdk/client-sqs";
-
-// import { repoAnalysisSuccessHandler } from "../controllers/internalService.controller.js";
-
 import dotenv from 'dotenv';
+import { Worker } from 'bullmq';
 import { Deployment, Project, publishEvent } from "@veren/domain";
 import { backendDeployQueue } from "../Queue/backendDeploy-queue.js";
 import ecrImageExistsCheck from "../utils/ecrCheck/ecrImageExistsCheck.js";
 dotenv.config();
 
-const sqs = new SQSClient({
-    region: "ap-south-1",
-    credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    },
-});
-
-const QUEUE_URL = process.env.SERVICE_QUEUE_URL!;
-
-export async function pollQueue() {
-    const res = await sqs.send(
-        new ReceiveMessageCommand({
-            QueueUrl: QUEUE_URL,
-            MaxNumberOfMessages: 5,
-            WaitTimeSeconds: 5,
-            VisibilityTimeout: 60,
-        })
+// Initialize BullMQ Worker for backendDeployQueue
+export function startQueueWorker() {
+    const worker = new Worker(
+        'backendDeployQueue',
+        async job => {
+            try {
+                await handleEvent(job.data);
+            } catch (err) {
+                console.error("Worker job processing failed:", err);
+                throw err;
+            }
+        },
+        {
+            connection: backendDeployQueue.client.options.connection,
+        }
     );
 
-    if (!res.Messages) return;
-
-    for (const msg of res.Messages) {
-        try {
-            const event = JSON.parse(msg.Body!);
-
-            await handleEvent(event);
-
-            await sqs.send(
-                new DeleteMessageCommand({
-                    QueueUrl: QUEUE_URL,
-                    ReceiptHandle: msg.ReceiptHandle!,
-                })
-            );
-        } catch (err) {
-            console.error("Processing failed:", err);
-        }
-    }
+    worker.on('completed', (job) => {
+        console.log(`Job ${job.id} has completed`);
+    });
+    worker.on('failed', (job, err) => {
+        console.error(`Job ${job?.id} has failed:`, err);
+    });
+    return worker;
 }
 
 async function handleEvent(event: any) {
