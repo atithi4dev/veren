@@ -43,7 +43,6 @@ const worker = new Worker<FrontendBuildJobData, FrontendBuildJobResult>('fronten
             envs
         } = job.data;
         try {
-            console.log("Entered system")
             if (!projectId || !deploymentId) {
                 throw new BuildJobError("Missing identifiers", {
                     msg: "projectId or deploymentId missing",
@@ -55,7 +54,6 @@ const worker = new Worker<FrontendBuildJobData, FrontendBuildJobResult>('fronten
             const {installCommand, buildCommand, outDir, version} = build;
 
             if (!installCommand || !buildCommand || !outDir) {
-                console.log("Missing build configs");
                 throw new BuildJobError("Missing build configs", {
                     msg: "frontendConfig is missing",
                     metadata: { projectId, deploymentId },
@@ -64,7 +62,6 @@ const worker = new Worker<FrontendBuildJobData, FrontendBuildJobResult>('fronten
             }
 
             if (!frontendDirPath) {
-                console.log("INVA Dir")
                 throw new BuildJobError("Invalid directory", {
                     msg: "frontendDir is missing",
                     metadata: { projectId, deploymentId },
@@ -78,7 +75,6 @@ const worker = new Worker<FrontendBuildJobData, FrontendBuildJobResult>('fronten
             );
 
             if (!frontendResult.status) {
-                console.log("FRONTEND_BUILT_FAILED Dir")
                 throw new BuildJobError("FRONTEND_BUILT_FAILED", {
                     msg: "buildFrontend execution failed",
                     metadata: { projectId, deploymentId },
@@ -105,8 +101,6 @@ const worker = new Worker<FrontendBuildJobData, FrontendBuildJobResult>('fronten
 )
 
 worker.on('completed', async (job, result) => {
-    const { projectId, deploymentId, FrontendtaskArn } = result;
-
     publishEvent({
         type: DeploymentStatus.FRONTEND_BUILD_QUEUED,
         projectId: result.projectId,
@@ -124,7 +118,6 @@ worker.on('failed', async (job: any, err: any) => {
     });
     if (err instanceof BuildJobError) {
        if (err.message == "FRONTEND_BUILT_FAILED") {
-        console.log("FRONTEND_BUILT_FAILED Dir")
             publishEvent({
                 type: DeploymentStatus.FRONTEND_BUILD_FAILED,
                 projectId: job?.data?.projectId!,
@@ -133,14 +126,13 @@ worker.on('failed', async (job: any, err: any) => {
             });
         } else {
             publishEvent({
-                type: DeploymentStatus.FRONTEND_BUILD_QUEUED,
+                type: DeploymentStatus.INTERNAL_ERROR,
                 projectId: job?.data?.projectId!,
                 deploymentId: job?.data?.deploymentId!,
                 payload: err.payload,
             });
         }
     } else {
-        console.log("FRONTEND_BUILD_FAILED");
         publishEvent({
             type: DeploymentStatus.INTERNAL_ERROR,
             projectId: job?.data?.projectId!,

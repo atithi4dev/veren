@@ -12,12 +12,13 @@ const { publishEvent } = require("./publisher");
 const {
   AWS_ACCESS_KEY_ID,
   AWS_SECRET_ACCESS_KEY,
-  AWS_REGION = "ap-south-1",
+  AWS_REGION,
   PROJECT_ID,
   DEPLOYMENTID,
   FRONTENDPATH,
   BUILDCOMMAND = "npm run build",
   INSTALLCOMMAND = "npm install",
+  OUTDIR = "dist",
   KAFKA_CLIENT_ID,
   KAFKA_BROKER1,
   KAFKA_SASL_USERNAME,
@@ -66,8 +67,8 @@ async function publishLog(level, stage, message) {
       {
         key: "log",
         value: JSON.stringify({
-          PROJECT_ID,
-          DEPLOYMENTID,
+          project_id:PROJECT_ID,
+          deployment_id: DEPLOYMENTID,
           level,
           stage,
           message,
@@ -104,13 +105,6 @@ process.on("SIGTERM", () => safeExit(143, "SIGTERM"));
 async function init() {
   await producer.connect();
 
-  await publishEvent(
-    "FRONTEND_PROCESSING",
-    PROJECT_ID,
-    DEPLOYMENTID,
-    { frontendDir: FRONTENDPATH }
-  );
-
   await publishLog("INFO", "INIT", "Frontend build started");
 
   const outputDir = path.join("/home/app", "output");
@@ -118,7 +112,7 @@ async function init() {
 
   if (!fs.existsSync(frontendPath)) {
     await publishEvent(
-      "FRONTEND_BUILT_FAILED",
+      "FRONTEND_BUILD_FAILED",
       PROJECT_ID,
       DEPLOYMENTID,
       { msg: "Frontend path does not exist" }
@@ -139,7 +133,7 @@ async function init() {
   build.on("close", async (code) => {
     if (code !== 0) {
       await publishEvent(
-        "FRONTEND_BUILT_FAILED",
+        "FRONTEND_BUILD_FAILED",
         PROJECT_ID,
         DEPLOYMENTID,
         { msg: `Build failed with exit code ${code}` }
@@ -148,7 +142,7 @@ async function init() {
     }
 
     try {
-      const distPath = path.join(frontendPath, "dist");
+      const distPath = path.join(frontendPath, OUTDIR);
 
       if (!fs.existsSync(distPath)) {
         throw new Error("dist folder missing");
@@ -161,7 +155,7 @@ async function init() {
         if (fs.lstatSync(fullPath).isDirectory()) continue;
 
         await s3Client.send(new PutObjectCommand({
-          Bucket: "veren-v2",
+          Bucket: "veren-frontend-builds",
           Key: `__outputs/${PROJECT_ID}/${file}`,
           Body: fs.createReadStream(fullPath),
           ContentType: mime.lookup(fullPath) || "application/octet-stream",
@@ -169,7 +163,7 @@ async function init() {
       }
 
       await publishEvent(
-        "FRONTEND_BUILT_SUCCESS",
+        "FRONTEND_BUILD_SUCCESS",
         PROJECT_ID,
         DEPLOYMENTID,
         { output: `s3://veren-v2/__outputs/${PROJECT_ID}` }
@@ -180,7 +174,7 @@ async function init() {
 
     } catch (err) {
       await publishEvent(
-        "FRONTEND_BUILT_FAILED",
+        "FRONTEND_BUILD_FAILED",
         PROJECT_ID,
         DEPLOYMENTID,
         { msg: err.message }
@@ -192,7 +186,7 @@ async function init() {
 
 init().catch(async (err) => {
   await publishEvent(
-    "FRONTEND_BUILT_FAILED",
+    "FRONTEND_BUILD_FAILED",
     PROJECT_ID,
     DEPLOYMENTID,
     { msg: err.message }
@@ -204,7 +198,7 @@ init().catch(async (err) => {
 
 setTimeout(async () => {
   await publishEvent(
-    "FRONTEND_BUILT_FAILED",
+    "FRONTEND_BUILD_FAILED",
     PROJECT_ID,
     DEPLOYMENTID,
     { msg: "Build timed out" }

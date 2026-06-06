@@ -6,7 +6,7 @@ import ApiError from "../utils/api-utils/ApiError.js";
 import githubAuthService from "../services/githubAuth.service.js";
 import setAuthCookies from "../utils/auth/authCookies.js";
 import asyncHandler from "../utils/api-utils/asyncHandler.js";
-import User from "../models/user.model.js";
+import { User } from "@veren/domain";
 import ApiResponse from "../utils/api-utils/ApiResponse.js";
 import { verifyJwt } from "../middlewares/auth.middlewares.js";
 import jwt from "jsonwebtoken";
@@ -78,19 +78,18 @@ const CallbackController = asyncHandler(async (req: Request, res: Response) => {
 
     setAuthCookies(res, accessToken, refreshToken);
 
-req.session.githubToken = githubToken;
+    req.session.githubToken = githubToken;
 
-// Wait for session to save before redirect
-await new Promise<void>((resolve, reject) => {
-  req.session.save(err => (err ? reject(err) : resolve()));
-});
+    // Wait for session to save before redirect
+    await new Promise<void>((resolve, reject) => {
+        req.session.save(err => (err ? reject(err) : resolve()));
+    });
 
-return res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+    return res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
 })
 
 // LOGOUT 
 const logOutController = asyncHandler(async (req: Request, res: Response) => {
-    // if user is logged in, increment tokenVersion to invalidate old refresh tokens
     if (req.session.githubToken) {
         const githubId = req.session.githubId;
 
@@ -102,14 +101,12 @@ const logOutController = asyncHandler(async (req: Request, res: Response) => {
         }
     }
 
-    // Destroy session
     req.session.destroy(err => {
         if (err) {
             console.error("Error while destroying session: ", err);
         }
     });
 
-    // Clear JWT cookies
     res.clearCookie("accessToken")
     res.clearCookie("refreshToken")
 

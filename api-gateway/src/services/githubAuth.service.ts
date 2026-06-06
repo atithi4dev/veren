@@ -1,5 +1,4 @@
-import User from "../models/user.model.js";
-import IUser from "../types/user.js";
+import {IUser, User} from "@veren/domain";
 import ApiError from "../utils/api-utils/ApiError.js"
 import {Request} from "express";
 
@@ -49,12 +48,13 @@ async function githubAuthService(req:Request, githubToken: string): Promise<Auth
             email:  primaryEmail ?? profile.email ?? "",
             userName: profile.login,
             avatar: profile.avatar_url,
+            githubAccessToken: githubToken
         });
     }else{
         user.name = profile.name ?? user.name;
         user.avatar = profile.avatar_url ?? user.avatar;
         user.email = primaryEmail ?? user.email;
-
+        user.githubAccessToken = githubToken;
         user.tokenVersion = (user.tokenVersion ?? 0) + 1;
 
         await user.save();

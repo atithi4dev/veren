@@ -48,6 +48,7 @@ coverage/
 api-gateway/src/postgres.env
 WORKERS/build-worker/.env
 WORKERS/clone-worker/.env
+WORKERS/log-worker/.env
 
 packages/domain/.env
 

@@ -5,11 +5,13 @@ import {
 } from "@aws-sdk/client-sqs";
 
 import dotenv from 'dotenv';
-import { Deployment, Project, publishEvent } from "@veren/domain";
+import { Project } from "@veren/domain";
+import { client } from "../app.js";
+import logger from "../logger/logger.js";
 dotenv.config();
 
 const sqs = new SQSClient({
-    region: "ap-south-1",
+    region: process.env.AWS_REGION!,
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
@@ -43,15 +45,18 @@ export async function pollQueue() {
                 })
             );
         } catch (err) {
-            console.error("Processing failed:", err);
+            logger.error("Processing failed:", err);
         }
     }
 }
 
 async function handleEvent(event: any) {
     switch (event.type) {
-        case "DEPLOYMENT_METADATA_RECIEVED":
-            await deploymentMetadataConsumer(event);
+        case "FRONTEND_BUILD_SUCCESS":
+            await frontendDeployed(event);
+            break;
+        case "BACKEND_DEPLOYED":
+            await backendDeployed(event);
             break;
         default:
             // ignore
@@ -59,10 +64,28 @@ async function handleEvent(event: any) {
     }
 }
 
-async function deploymentMetadataConsumer(event:any) {
-    const {deploymentId, projectId, payload} = event;
+async function frontendDeployed(event: any) {
+    const { projectId } = event;
+    const project = await Project.findById(projectId);
+    if (project) {
+        await client.set(`frontend:${project?.name}`, projectId);
+    }
+    logger.info("FRONTEND DEPLOYED", projectId);
+}
 
-    const ip = payload.publicIp;
-
-    console.log(ip);
+async function backendDeployed(event: any) {
+    const { projectId, deploymentId, payload } = event;
+    const project = await Project.findById(projectId);
+    if (project) {
+        await Project.updateOne(
+            { _id: projectId },
+            {
+                $set: {
+                    "domains.ip": payload.publicIp
+                }
+            }
+        );
+        await client.set(`backend:${project?.name}`, payload.publicIp);
+    }
+    logger.info("BACKEND DEPLOYED", projectId);
 }

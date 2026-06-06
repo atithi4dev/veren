@@ -38,9 +38,8 @@ const worker = new Worker<BackendBuildJobData, BackendBuildJobResult>(
             repoUrl,
             backendDirPath,
             build,
-            envs,
         } = job.data;
-
+        
         try {
             if (!projectId || !deploymentId) {
                 throw new BuildJobError("Missing identifiers", {
@@ -67,8 +66,8 @@ const worker = new Worker<BackendBuildJobData, BackendBuildJobResult>(
             }
 
 
-            publishEvent({
-                type: DeploymentStatus.BACKEND_BUILDING,
+            await publishEvent({
+                type: DeploymentStatus.BACKEND_BUILD_QUEUED,
                 projectId,
                 deploymentId,
                 payload: {},
@@ -111,8 +110,8 @@ const worker = new Worker<BackendBuildJobData, BackendBuildJobResult>(
 );
 
 worker.on("completed", async (_job, result) => {
-    publishEvent({
-        type: DeploymentStatus.BACKEND_BUILD_SUCCESS,
+    await publishEvent({
+        type: DeploymentStatus.BACKEND_BUILDING,
         projectId: result.projectId,
         deploymentId: result.deploymentId,
         payload: {
@@ -128,14 +127,14 @@ worker.on("failed", async (job: any, err: any) => {
     });
 
     if (err instanceof BuildJobError) {
-        publishEvent({
+        await publishEvent({
             type: DeploymentStatus.BACKEND_BUILD_FAILED,
             projectId: job?.data?.projectId!,
             deploymentId: job?.data?.deploymentId!,
             payload: err.payload,
         });
     } else {
-        publishEvent({
+        await publishEvent({
             type: DeploymentStatus.INTERNAL_ERROR,
             projectId: job?.data?.projectId!,
             deploymentId: job?.data?.deploymentId!,
