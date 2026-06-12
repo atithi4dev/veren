@@ -6,8 +6,8 @@ interface Env {
 }
 export type ProjectType = "frontend" | "backend";
 interface RuntimeConfig {
-  rType: "static" | "server";
-  port?: number;
+    rType: "static" | "server";
+    port?: number;
 }
 
 export interface IProject {
@@ -32,6 +32,7 @@ export interface IProject {
     entryDirectory: string;
     domains: {
         subdomain: string;
+        ip: string;
     }
 
     frontendBuild: {
@@ -47,6 +48,8 @@ export interface IProject {
         version: number
     },
 
+    githubWebhookId : string;
+    githubWebhookSecret : string;
     runtime: RuntimeConfig;
 
     status: "active" | "paused" | "deleted"

@@ -1,8 +1,9 @@
 import jwt from "jsonwebtoken";
-import User from "../models/user.model.js";
+import { User } from "@veren/domain";
 import ApiError from "../utils/api-utils/ApiError.js";
 import asyncHandler from "../utils/api-utils/asyncHandler.js";
 import { Request, Response, NextFunction } from "express";
+import logger from "../logger/logger.js";
 
 interface AuthRequest extends Request {
   user?: {
@@ -10,7 +11,6 @@ interface AuthRequest extends Request {
     provider: string;
   };
 }
-
 export const verifyJwt = asyncHandler(
   async (req: AuthRequest, _res: Response, next: NextFunction) => {
 
@@ -24,13 +24,13 @@ export const verifyJwt = asyncHandler(
     if (!ACCESS_TOKEN_SECRET) {
       throw new ApiError(500, "Access token secret not configured");
     }
-
-    const payload = jwt.verify(token, ACCESS_TOKEN_SECRET) as {
+    interface payloadI {
       sub: string;
       provider: string;
       type: string;
-    };
-
+    }
+    let payload: payloadI = { sub: "", provider: "", type: "" };
+    payload = jwt.verify(token, ACCESS_TOKEN_SECRET) as payloadI;
     if (payload.type !== "access") {
       throw new ApiError(401, "Invalid token type");
     }
@@ -43,7 +43,6 @@ export const verifyJwt = asyncHandler(
       id: user._id.toString(),
       provider: user.provider,
     };
-
     next();
   }
 );

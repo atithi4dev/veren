@@ -1,6 +1,5 @@
 import { Schema, model } from "mongoose";
-import IUser from '../types/user.js'
-import bcrypt from 'bcrypt'
+import { IUser } from '../types/user'
 import jwt, { SignOptions } from 'jsonwebtoken'
 
 const userSchema = new Schema<IUser>({
@@ -32,7 +31,7 @@ const userSchema = new Schema<IUser>({
         required: true,
         unique: true,
         trim: true,
-        index:true
+        index: true
     },
     avatar: {
         type: String,
@@ -44,6 +43,10 @@ const userSchema = new Schema<IUser>({
             ref: "Project",
         }
     ],
+    githubAccessToken:{
+        type: String,
+        required: true
+    },
     tokenVersion: {
         type: Number,
         default: 0
@@ -51,10 +54,10 @@ const userSchema = new Schema<IUser>({
 
 }, { timestamps: true })
 
-userSchema.methods.generateAccessToken = function ():string {
+userSchema.methods.generateAccessToken = function (): string {
     const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET
     const ACCESS_TOKEN_EXPIRY = "7d";
-    
+
     if (!ACCESS_TOKEN_SECRET) {
         throw new Error("Access Token is not defined");
     }
@@ -74,14 +77,14 @@ userSchema.methods.generateAccessToken = function ():string {
     )
 }
 
-userSchema.methods.generateRefreshToken = function ():string {
+userSchema.methods.generateRefreshToken = function (): string {
     const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
     const REFRESH_TOKEN_EXPIRY = "7d";
 
     if (!REFRESH_TOKEN_SECRET) {
         throw new Error("Refresh token is not defined");
     }
-    const options: SignOptions ={
+    const options: SignOptions = {
         expiresIn: REFRESH_TOKEN_EXPIRY
     }
     return jwt.sign(
@@ -92,10 +95,10 @@ userSchema.methods.generateRefreshToken = function ():string {
             tokenVersion: this.tokenVersion
         },
         REFRESH_TOKEN_SECRET,
-        options    
+        options
     )
 }
 
 const User = model<IUser>('User', userSchema);
 
-export default User;
+export { User };

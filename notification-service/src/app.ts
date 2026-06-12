@@ -15,16 +15,14 @@ app.use(
      })
 );
 
-// Middleware to parse JSON and URL-encoded data along with static files
 app.use(express.json({limit: '16kb'}));
 app.use(express.urlencoded({extended: true, limit: '16kb'}))
 app.use(cookieParser()); 
 app.use(express.static('public'));
 
+import LogsRouter from "./routes/logger.routes.js"
 
-// BUILD_QUEUE_SUCCESS Handle 
-
-// FRONTEND_BUILD_SUCCESS Handle 
+app.use("/api/v1/logs", LogsRouter)
 
 app.use(errorHandler)
 

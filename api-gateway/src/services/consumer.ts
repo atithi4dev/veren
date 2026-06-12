@@ -4,16 +4,21 @@ import {
     DeleteMessageCommand,
 } from "@aws-sdk/client-sqs";
 
-// import { repoAnalysisSuccessHandler } from "../controllers/internalService.controller.js";
-
 import dotenv from 'dotenv';
-import { Deployment, Project, publishEvent } from "@veren/domain";
+import { Deployment, DeploymentStatus, Project, publishEvent } from "@veren/domain";
+
 import { backendDeployQueue } from "../Queue/backendDeploy-queue.js";
+
 import ecrImageExistsCheck from "../utils/ecrCheck/ecrImageExistsCheck.js";
+import logger from "../logger/logger.js";
+
 dotenv.config();
 
+
+/* ----------- SQS CONFIG ----------- */
+
 const sqs = new SQSClient({
-    region: "ap-south-1",
+    region: process.env.AWS_REGION!,
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
@@ -33,10 +38,10 @@ export async function pollQueue() {
     );
 
     if (!res.Messages) return;
-
     for (const msg of res.Messages) {
         try {
-            const event = JSON.parse(msg.Body!);
+            const outer = JSON.parse(msg.Body!)
+            const event = outer.Message ? JSON.parse(outer.Message) : outer
 
             await handleEvent(event);
 
@@ -47,43 +52,46 @@ export async function pollQueue() {
                 })
             );
         } catch (err) {
-            console.error("Processing failed:", err);
+            logger.error("Processing failed:", err);
         }
     }
 }
 
+
 async function handleEvent(event: any) {
     switch (event.type) {
-        case "REPO_ANALYSIS_SUCCESS":
-            await onRepoAnalysisSuccess(event);
+        case "INTERNAL_ERROR":
+            await internalErrorHandler(event);
             break;
-
-        case "REPO_ANALYSIS_FAILED":
-            await AnalysisFailed(event);
+        case "CREATED":
+            await created(event);
             break;
-        case "BUILD_QUEUE_SUCCESS":
-            await buildQueueSuccess(event);
-            break;
-        case "FRONTEND_QUEUE_FAILED":
-            await frontendQueueFailed(event);
-            break;
-        case "BACKEND_QUEUE_FAILED":
-            await backendQueueFailed(event);
-            break;
-        case "BUILD_UNKNOWN_FAILURE":
-            await unknownIssue(event);
-            break;
-        case "FRONTEND_BUILD_SUCCESS":
-            await frontendBuildSuccess(event);
-            break;
-        case "BACKEND_BUILD_SUCCESS":
-            await backendBuildSuccess(event)
+        case "FRONTEND_BUILD_QUEUED":
+            await frontendBuildQueued(event);
             break;
         case "FRONTEND_BUILD_FAILED":
             await frontendBuildFailed(event);
             break;
+        case "FRONTEND_BUILD_SUCCESS":
+            await frontendBuildSuccess(event);
+            break;
+        case "BACKEND_BUILD_QUEUED":
+            await backendBuildQueued(event);
+            break;
+        case "BACKEND_BUILDING":
+            await backendBuilding(event);
+            break;
         case "BACKEND_BUILD_FAILED":
             await backendBuildFailed(event);
+            break;
+        case "BACKEND_BUILD_SUCCESS":
+            await backendBuildSuccess(event);
+            break;
+        case "BACKEND_DEPLOY_FAILED":
+            await backendDeployFailed(event);
+            break;
+        case "BACKEND_DEPLOYED":
+            await backendDeployed(event);
             break;
         default:
             // ignore
@@ -91,115 +99,88 @@ async function handleEvent(event: any) {
     }
 }
 
-/* ---------------- ANALYTICS QUEUE STAGE ---------------- */
-
-async function onRepoAnalysisSuccess(event: any) {
-    const { projectId, deploymentId } = event;
-    const { commitHash, commitMessage, config } = event.payload;
-
-    // await repoAnalysisSuccessHandler(projectId, config, deploymentId, commitHash, commitMessage);
+async function internalErrorHandler(event: any) {
+    // send a support mail , responsibility of mail queue
+}
+async function created(event: any) {
+    logger.info("Deployment Created")
 }
 
-async function AnalysisFailed(event: any) {
+async function frontendBuildQueued(event: any) {
     const { deploymentId, payload } = event;
-    await Deployment.findByIdAndUpdate(deploymentId, {
-        status: "failed",
-        finishedAt: new Date(),
-        error: {
-            type: event.type,
-            message: payload?.source === "INTERNAL" ? `INTERNAL SERVER ERROR : ${payload.msg}` : payload?.msg,
-        }
-    })
 
-}
+    const { frontendTaskArn } = payload;
 
-/* ---------------- PRE BUILD QUEUE STAGE ---------------- */
-
-async function buildQueueSuccess(event: any) {
-    const { projectId, deploymentId } = event;
-    const { frontendTaskArn, backendTaskArn } = event.payload;
     await Deployment.findByIdAndUpdate(deploymentId, {
         status: "building",
-        frontendTaskArn,
-        backendTaskArn,
-    });
-
+        frontendTaskArn
+    })
 }
 
-async function frontendQueueFailed(event: any) {
-    // Notify @supoort for the same
-
+async function frontendBuildFailed(event: any) {
     const { deploymentId, payload } = event;
+
     await Deployment.findByIdAndUpdate(deploymentId, {
         status: "failed",
         finishedAt: new Date(),
         error: {
             type: event.type,
-            message: `INTERNAL SERVER ERROR : ${payload.msg}`,
+            message: payload.msg,
         }
     })
 }
-
-async function backendQueueFailed(event: any) {
-    // Notify @supoort for the same
-
-    const { deploymentId, payload } = event;
-    await Deployment.findByIdAndUpdate(deploymentId, {
-        status: "failed",
-        finishedAt: new Date(),
-        error: {
-            type: event.type,
-            message: `INTERNAL SERVER ERROR : ${payload.msg}`,
-        }
-    })
-}
-
-async function unknownIssue(event: any) {
-    // Notify @supoort for the same
-
-    const { deploymentId, payload } = event;
-    await Deployment.findByIdAndUpdate(deploymentId, {
-        status: "failed",
-        finishedAt: new Date(),
-        error: {
-            type: event.type,
-            message: `UNCATCHED ISSUE : ${payload.msg}`,
-        }
-    })
-}
-
-/* ---------------- ECS POST BUILD STAGE ---------------- */
 
 async function frontendBuildSuccess(event: any) {
-    const { projectId, deploymentId, artifactUrl } = event;
-
-    const deployment = await Deployment.findById(deploymentId)
-    if (deployment?.rollBackArtifactUrl != "" || deployment?.rollBackArtifactUrl?.length != 0) {
-        const oldArtifact = deployment?.artifactUrl;
+    const { projectId, deploymentId } = event;
+    try {
         await Deployment.findByIdAndUpdate(deploymentId, {
-            artifactUrl,
-            rollBackArtifactUrl: oldArtifact
-        })
-    } else {
-        await Deployment.findByIdAndUpdate(deploymentId, {
-            artifactUrl,
-        })
+            status: "deployed",
+            finishedAt: new Date(),
+        });
+    } catch (error) {
+        throw new Error(`Frontend Build success. Event handler error. Project ID:${projectId} DeploymentId: ${deploymentId}`);
     }
+}
+
+
+async function backendBuildQueued(event: any) {
+    const { deploymentId } = event;
+
+    await Deployment.findByIdAndUpdate(deploymentId, {
+        status: "building"
+    })
 }
 
 async function backendBuildSuccess(event: any) {
     const { deploymentId, projectId } = event;
     const { imageTag } = event.payload;
+    logger.info("BACKEND SUCCESS");
+    let exist;
+    for (let i = 0; i < 5; i++) {
+        exist = await ecrImageExistsCheck(imageTag);
 
-    const exist = await ecrImageExistsCheck(imageTag);
+        if (exist) break;
+
+        await new Promise(r => setTimeout(r, 3000));
+    }
     if (exist) {
         const project = await Project.findById(projectId);
+
+        await publishEvent({
+            type: DeploymentStatus.BACKEND_DEPLOY_QUEUED,
+            projectId: projectId,
+            deploymentId: deploymentId,
+            payload: {
+                msg: "Deployment has been queued to worker."
+            },
+        });
+
         await backendDeployQueue.add("backendDeployQueue", {
-            deploymentId, 
+            deploymentId,
             projectId,
-            imageTag, 
-            installCommand: project?.backendBuild.installCommand,
-            startCommand: project?.backendBuild.runCommand,
+            imageTag,
+            installCommand: project?.backendBuild?.installCommand,
+            startCommand: project?.backendBuild?.runCommand,
             envs: project?.envs
         }, {
             attempts: 1,
@@ -216,7 +197,6 @@ async function backendBuildSuccess(event: any) {
         })
     } else {
         // @support
-        // queue delete of current deployment if exist
         await Deployment.findByIdAndUpdate(deploymentId, {
             status: "failed",
             finishedAt: new Date(),
@@ -228,19 +208,7 @@ async function backendBuildSuccess(event: any) {
     }
 
 }
-async function frontendBuildFailed(event: any) {
-    const { deploymentId, payload } = event;
 
-    await Deployment.findByIdAndUpdate(deploymentId, {
-        status: "failed",
-        finishedAt: new Date(),
-        error: {
-            type: event.type,
-            message: payload.msg,
-        }
-    })
-    // queue delete of current deployment if exist
-}
 async function backendBuildFailed(event: any) {
     const { deploymentId, payload } = event;
 
@@ -252,5 +220,32 @@ async function backendBuildFailed(event: any) {
             message: payload.msg,
         }
     })
-    // queue delete of current backend deployment if exist
+}
+
+async function backendBuilding(event: any) {
+    const { deploymentId } = event;
+
+    await Deployment.findByIdAndUpdate(deploymentId, {
+        status: "building",
+    })
+}
+
+async function backendDeployFailed(event: any) {
+    const { deploymentId } = event;
+    // delete ecr image  + requeue
+    await Deployment.findByIdAndUpdate(deploymentId, {
+        status: "failed",
+    })
+}
+
+async function backendDeployed(event: any) {
+    const { projectId, deploymentId, payload } = event;
+    const {
+        publicIp,
+        backendDeploymentArn
+    } = payload;
+
+    await Deployment.findByIdAndUpdate(deploymentId, {
+        status: "deployed",
+    })
 }

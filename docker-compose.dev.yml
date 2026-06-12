@@ -28,6 +28,9 @@ services:
       - ./routing-service/.env
     networks:
       - veren 
+    depends_on:
+      - api-gateway
+
   orchestrate-service:
     build:
       context: .
@@ -39,9 +42,10 @@ services:
       - "8005:3000"
     env_file:
       - ./orchestrate-service/.env
-    command: [ "npm", "run", "dev" ]
     networks:
       - veren  
+    depends_on:
+      - api-gateway
   notification-service:
     build:
       context: .
@@ -61,8 +65,6 @@ services:
       context: .
       dockerfile: ./WORKERS/frontend-build-worker/Dockerfile
     privileged: true
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
     env_file:
       - ./WORKERS/frontend-build-worker/.env
     networks:
@@ -75,8 +77,6 @@ services:
       context: .
       dockerfile: ./WORKERS/backend-build-worker/Dockerfile
     privileged: true
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
     env_file:
       - ./WORKERS/backend-build-worker/.env
     networks:
@@ -88,10 +88,19 @@ services:
       context: .
       dockerfile: ./WORKERS/backend-deploy-worker/Dockerfile
     privileged: true
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
     env_file:
       - ./WORKERS/backend-deploy-worker/.env
+    networks:
+      - veren
+    depends_on:
+      - internal-redis
+  log-worker:
+    build:
+      context: .
+      dockerfile: ./WORKERS/log-worker/Dockerfile
+    privileged: true
+    env_file:
+      - ./WORKERS/log-worker/.env
     networks:
       - veren
     depends_on:

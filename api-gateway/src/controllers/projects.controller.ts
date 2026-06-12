@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
-import { Project, IProject } from "@veren/domain";
+import { Project, IProject, } from "@veren/domain";
 import ApiError from "../utils/api-utils/ApiError.js";
 import ApiResponse from "../utils/api-utils/ApiResponse.js";
 import asyncHandler from "../utils/api-utils/asyncHandler.js";
 import logger from "../logger/logger.js";
+import { registerGithubWebhook } from "../services/github.service.js";
 
 /* THIS IS ONLY ACCESIBLE TO FRONTEND USER */
 const createFrontendProject = asyncHandler(async (req: Request, res: Response) => {
@@ -16,7 +17,7 @@ const createFrontendProject = asyncHandler(async (req: Request, res: Response) =
         installCommand,
         buildCommand,
         buildOutDirectory,
-    version= "20" } = req.body;
+        version = "20" } = req.body;
 
     const projectData = {
         name: projectName.toLowerCase(),
@@ -62,7 +63,7 @@ const createFrontendProject = asyncHandler(async (req: Request, res: Response) =
         logger.info("Not of project error")
         throw new ApiError(500, "Unable to Create Project at the moment.")
     }
-
+    await registerGithubWebhook(project.git.repoUrl, req.session.githubToken!, project._id.toString())
     return res.status(201).json(
         new ApiResponse(201, { sucess: true, project }, "Project created Successfully")
     )
@@ -100,7 +101,7 @@ const createBackendProject = asyncHandler(async (req: Request, res: Response) =>
             type: "server"
         },
         domains: {
-            subdomain: `https://api-${projectName.toLowerCase()}.veren.site`,
+            subdomain: `https://api.${projectName.toLowerCase()}.veren.site`,
         },
         createdBy: req.user?.id
     }
@@ -122,7 +123,8 @@ const createBackendProject = asyncHandler(async (req: Request, res: Response) =>
         logger.info("Not of project error")
         throw new ApiError(500, "Unable to Create Project at the moment.")
     }
-
+    await registerGithubWebhook(project.git.repoUrl, req.session.githubToken!, project._id.toString())
+    
     return res.status(201).json(
         new ApiResponse(201, { sucess: true, project }, "Project created Successfully")
     )
@@ -136,16 +138,11 @@ const getAllProjects = asyncHandler(async (req: Request, res: Response) => {
     }
 
     const projects = await Project.find({ createdBy: userId })
-        .select({
-            name: 1,
-            "domains.subdomain": 1,
-            createdBy: 1,
-            _id: 1
-        })
+        .select("-envs")
         .populate({
             path: "createdBy",
             select: "_id name userName avatar"
-        })
+        }).lean()
 
     return res.status(200).json(
         new ApiResponse(200, projects, "Fetched user projects successfully")
@@ -168,14 +165,10 @@ const getProjectConfigUser = asyncHandler(async (req: Request, res: Response) =>
 
 })
 
-const updateProjectConfigUser = asyncHandler(async (req: Request, res: Response) => {
-
-})
-
 const deleteProject = asyncHandler(async (req: Request, res: Response) => {
 
 })
 
 export {
-    createBackendProject, createFrontendProject, getAllProjects, getProjectConfigUser,
+    createBackendProject, createFrontendProject, getAllProjects,
 }

@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
+import { createClient } from "redis"
 
 import asyncHandler from "../utils/api-utils/asyncHandler.js";
 import ApiError from "../utils/api-utils/ApiError.js";
-
 import { frontendBuildQueue } from "../Queue/frontendBuild-queue.js";
 
 import logger from "../logger/logger.js";
@@ -10,6 +10,11 @@ import logger from "../logger/logger.js";
 import { Project, DeploymentStatus, publishEvent } from "@veren/domain";
 import { Deployment } from "@veren/domain";
 import { backendBuildQueue } from "../Queue/backendBuild-queue.js";
+import ApiResponse from "../utils/api-utils/ApiResponse.js";
+
+const redis = createClient({
+  socket: { host: "internal-redis", port: 6379 }
+});
 
 const deployProject = asyncHandler(async (req: Request, res: Response) => {
   const { projectId } = req.params;
@@ -17,7 +22,7 @@ const deployProject = asyncHandler(async (req: Request, res: Response) => {
   if (!projectId || typeof projectId !== "string") {
     throw new ApiError(400, "Project Id is required.");
   }
-  console.log(req.cookies);
+
   const userId = req.user?.id;
   if (!userId) {
     throw new ApiError(401, "Unauthorized");
@@ -51,8 +56,7 @@ const deployProject = asyncHandler(async (req: Request, res: Response) => {
   });
 
   await Project.findByIdAndUpdate(projectId, {
-    $push: { deployments: newDeployment._id },
-    $set: { currentDeployment: newDeployment._id },
+    $set: { deployments: newDeployment._id,currentDeployment: newDeployment._id },
   });
 
   const jobOptions = {
@@ -64,13 +68,12 @@ const deployProject = asyncHandler(async (req: Request, res: Response) => {
     removeOnComplete: true,
     removeOnFail: true,
   };
-  console.log(project.envs);
+
   try {
     if (project.type === "frontend") {
       if (!project.frontendBuild?.outDir) {
         throw new ApiError(400, "Frontend outDir must be defined.");
       }
-      console.log(req.session);
       const frontendJobData = {
         projectId: project._id.toString(),
         deploymentId: newDeployment._id.toString(),
@@ -120,6 +123,14 @@ const deployProject = asyncHandler(async (req: Request, res: Response) => {
       status: "queued",
     });
 
+    // // CACHING DEPLOYMENT DETAILS FOR LOOKUPS
+    // await redis.set(
+    //   `deployment:${newDeployment._id}`,
+    //   JSON.stringify({ type: project.type }),
+    //   { EX: 3600 }
+    // )
+
+
     publishEvent({
       type: DeploymentStatus.CREATED,
       projectId: project._id.toString(),
@@ -140,12 +151,50 @@ const deployProject = asyncHandler(async (req: Request, res: Response) => {
 
   return res
     .status(200)
-    .json({ message: "Deployment triggered successfully." });
+    .json({ message: "Deployment triggered successfully.", deploymentId: newDeployment._id });
 });
 
-const roleBackProject = asyncHandler(async (req:Request, res: Response) =>{
-  
-})
+const getDeployment = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  const { deploymentId } = req.params;
+
+  if (!userId) throw new ApiError(401, "Unauthorized");
+
+  const deployment = await Deployment.findOne({
+    _id: deploymentId,
+    owner: userId
+  })
+    .select("-backendECSContainerArn")
+    .lean();
+
+  if (!deployment) throw new ApiError(404, "Deployment not found");
+
+  return res.status(200).json(
+    new ApiResponse(200, deployment, "Fetched deployment successfully")
+  );
+});
+
+const getAllUserDeployment = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  const { projectId } = req.query;
+  if (!userId) throw new ApiError(401, "Unauthorized");
+
+  const filter: any = { owner: userId };
+  if (projectId) filter.projectId = projectId;
+
+  const deployments = await Deployment.find(filter)
+    .select("-backendECSContainerArn")
+    .sort({ createdAt: -1 })
+    .populate({
+      path: "owner",
+      select: "_id name userName avatar"
+    })
+    .lean();
+
+  return res.status(200).json(
+    new ApiResponse(200, deployments, "Fetched deployments successfully")
+  );
+});
 
 const deployTo = asyncHandler(async (req: Request, res: Response) => {
   // const { projectId }= req.body;
@@ -154,6 +203,10 @@ const deployTo = asyncHandler(async (req: Request, res: Response) => {
   // .select("number");
 })
 
+const roleBackProject = asyncHandler(async (req: Request, res: Response) => {
+
+})
+
 export {
-  deployProject, deployTo, roleBackProject
+  deployProject, getDeployment, getAllUserDeployment, deployTo, roleBackProject
 }

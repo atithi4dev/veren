@@ -8,6 +8,8 @@ interface IUser {
     email: string;
     userName: string
     avatar: string;
+    
+    githubAccessToken: string;
 
     projects: Types.ObjectId[];
 
@@ -20,4 +22,4 @@ interface IUser {
     generateRefreshToken(): string;
 }
 
-export default IUser
+export { IUser }

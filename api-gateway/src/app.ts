@@ -35,6 +35,11 @@ app.use(
     })
 )
 
+
+// WEBHOOK ROUTES
+import WebhookHandler from "./routes/webhook.route.js";
+app.use("/api/v1/webhooks", WebhookHandler);
+
 // Middleware to parse JSON and URL-encoded data along with static files
 app.use(express.json({ limit: '16kb' }));
 app.use(express.urlencoded({ extended: true, limit: '16kb' }))
@@ -49,6 +54,7 @@ import RepoHandler from "./routes/repo.route.js";
 import DeploymentController from "./routes/deployment.route.js";
 import ProjectController from "./routes/projects.route.js";
 import InternalRouteHandler from "./routes/internalService.route.js"
+import envHandler from "./routes/env.route.js"
 
 // Routes Forwarding
 
@@ -66,6 +72,9 @@ app.use("/api/v1/deployment", DeploymentController)
 
 // Checks detaiks regarding repository
 app.use("/api/v1/repo", RepoHandler)
+
+// env Variable Handler 
+app.use("/api/v1/env", envHandler)
 
 app.use(errorHandler)
 

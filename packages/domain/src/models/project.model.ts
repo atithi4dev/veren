@@ -1,5 +1,5 @@
 import { Schema, model } from "mongoose";
-import { IProject } from "./types/project.js";
+import { IProject } from "../types/project.js";
 
 const envSchema = new Schema(
     {
@@ -64,6 +64,10 @@ const projectSchema = new Schema<IProject>({
             type: String,
             unique: true,
         },
+        ip: {
+            type: String,
+            unique: true
+        }
     },
 
     frontendBuild: {
@@ -118,7 +122,12 @@ const projectSchema = new Schema<IProject>({
         enum: ["active", "paused", "deleted"],
         default: "active",
     },
-
+    githubWebhookId: {
+        type: "String"
+    },
+    githubWebhookSecret: {
+        type: "String"
+    },
     deployments: [
         {
             type: Schema.Types.ObjectId,

@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose'
-import { IDeployment } from "./types/deployment.js"
+import { IDeployment } from "../types/deployment.js"
 
 const deploymentSchema = new Schema<IDeployment>({
     projectId: {
@@ -29,9 +29,6 @@ const deploymentSchema = new Schema<IDeployment>({
         type: String,
         trim: true
     },
-    buildLogsUrl: {
-        type: String
-    },
     backendImageUrl: {
         type: String
     },
@@ -48,7 +45,7 @@ const deploymentSchema = new Schema<IDeployment>({
         type: String
     },
     rollBackArtifactUrl: {
-        type: String
+        type: String,
     },
     startedAt: {
         type: Date,

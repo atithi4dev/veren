@@ -1,3 +1,46 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.tw-scrollbar-none {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
+.tw-scrollbar-none::-webkit-scrollbar {
+	display: none;
+}
+
+.tw-no-scrollbar {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
+.tw-no-scrollbar::-webkit-scrollbar {
+	display: none;
+}
+
+.scrollbar-aesthetic {
+	scrollbar-width: thin;
+	scrollbar-color: rgba(59, 130, 246, 0.5) rgba(30, 58, 138, 0.1);
+}
+
+.scrollbar-aesthetic::-webkit-scrollbar {
+	width: 8px;
+}
+
+.scrollbar-aesthetic::-webkit-scrollbar-track {
+	background: rgba(30, 58, 138, 0.05);
+	border-radius: 10px;
+}
+
+.scrollbar-aesthetic::-webkit-scrollbar-thumb {
+	background: linear-gradient(180deg, rgba(59, 130, 246, 0.6) 0%, rgba(99, 102, 241, 0.5) 100%);
+	border-radius: 10px;
+	border: 2px solid rgba(30, 58, 138, 0.05);
+	transition: background 0.3s ease;
+}
+
+.scrollbar-aesthetic::-webkit-scrollbar-thumb:hover {
+	background: linear-gradient(180deg, rgba(59, 130, 246, 0.8) 0%, rgba(99, 102, 241, 0.7) 100%);
+}

@@ -42,9 +42,12 @@ async function publishLog(level, stage, message) {
             {
                 key: "log",
                 value: JSON.stringify({
-                    PROJECT_ID,
-                    DEPLOYMENTID,
-                    log: logLine
+                    project_id: PROJECT_ID,
+                    deployment_id: DEPLOYMENTID,
+                    level,
+                    stage,
+                    message: logLine,
+                    ts: Date.now(),
                 })
             }
         ]
@@ -77,7 +80,17 @@ process.on("SIGTERM", () => safeExit(143, "SIGTERM"));
 // MAIN EXECUTION
 async function init() {
     await producer.connect();
+    console.log("TOPIC ARN:", process.env.DOMAIN_EVENTS_TOPIC_ARN);
+    console.log("AWS KEY EXISTS:", !!process.env.AWS_ACCESS_KEY_ID);
+    console.log("AWS SECRET EXISTS:", !!process.env.AWS_SECRET_ACCESS_KEY);
     publishLog("INFO", "INIT", "Backend build started");
+
+    await publishEvent("CREATED",
+        PROJECT_ID, DEPLOYMENTID, {
+        msg: "Image has built successfully",
+        imageTag: "imageTag"
+    }
+    )
     console.log("BUILD STARTED");
     const buildContext = path.join("/home/app/output", BACKEND_DIR);
     if (!fs.existsSync(buildContext)) {
@@ -85,7 +98,7 @@ async function init() {
         throw new Error(`Build context path does not exist: ${buildContext}`);
     }
 
-    publishEvent("BACKEND_PROCESSING", PROJECT_ID, DEPLOYMENTID, { backendDir: BACKEND_DIR })
+    await publishEvent("BACKEND_BUILDING", PROJECT_ID, DEPLOYMENTID, { backendDir: BACKEND_DIR })
 
 
     if (!NODE_VERSION) {
@@ -147,14 +160,13 @@ async function init() {
                 "BUILD",
                 `Image built and pushed: ${imageTag}`
             );
-            
-            publishEvent("BACKEND_BUILD_SUCCESS", 
-                PROJECT_ID, DEPLOYMENTID, { 
-                    msg: "Image has built successfully",  
-                    imageTag: imageTag
-                }
-            )
 
+            await publishEvent("BACKEND_BUILD_SUCCESS",
+                PROJECT_ID, DEPLOYMENTID, {
+                msg: "Image has built successfully",
+                imageTag: imageTag
+            }
+            )
             await safeExit(0, "Build success");
         } else {
             await publishLog(
@@ -162,7 +174,7 @@ async function init() {
                 "BUILD",
                 `Image build failed with code: ${code}`
             );
-            publishEvent("BACKEND_BUILD_FAILED", PROJECT_ID, DEPLOYMENTID, { msg: "Image build failed with code: ${code}" })
+            await publishEvent("BACKEND_BUILD_FAILED", PROJECT_ID, DEPLOYMENTID, { msg: "Image build failed with code: ${code}" })
             await safeExit(code, "Build failed");
         }
     });

@@ -29,7 +29,7 @@ const credentials: AwsCredentialIdentity = {
 };
 
 const ecsClient = new ECSClient({
-    region: "ap-south-1",
+    region: process.env.AWS_REGION!,
     credentials,
 });
 
@@ -65,7 +65,6 @@ export async function buildFrontend(
         { name: "KAFKA_SASL_PASSWORD", value: process.env.KAFKA_SASL_PASSWORD },
         { name: "DOMAIN_EVENTS_TOPIC_ARN", value: process.env.DOMAIN_EVENTS_TOPIC_ARN }
     ]
-console.log("Here");
 if (Array.isArray(envs)) {
     envs.forEach(({ key, value }) => {
         if (key && value !== undefined && value !== null) {
@@ -85,7 +84,6 @@ if (Array.isArray(envs)) {
             }
         });
     }
-    console.log("ENV DONE");
     
     //  ECS ECR S3
     if (version == "18") {
@@ -112,7 +110,6 @@ if (Array.isArray(envs)) {
         })
         
         const resp = await ecsClient.send(command18)
-        console.log("RESP1");
         if (resp.failures && resp.failures.length > 0) {
             publishEvent({
                 type: DeploymentStatus.INTERNAL_ERROR,
@@ -132,7 +129,6 @@ if (Array.isArray(envs)) {
         
         taskArn = resp.tasks?.[0].taskArn!;
     } else if (version == "20") {
-        console.log("RESP2");
         const command20 = new RunTaskCommand({
             cluster: config20.CLUSTER,
             taskDefinition: config20.TASK,
@@ -157,7 +153,6 @@ if (Array.isArray(envs)) {
         
         const resp = await ecsClient.send(command20)
         if (resp.failures && resp.failures.length > 0) {
-            console.log("publish");
             publishEvent({
                 type: DeploymentStatus.INTERNAL_ERROR,
                 projectId,
@@ -178,14 +173,12 @@ if (Array.isArray(envs)) {
         
         logger.info("Task started:", taskArn);
     } else {
-        console.log("end else");
         return {
             status: false,
             taskArn: ""
         }
     }
     
-    console.log("last");
     return {
         status: true,
         taskArn: taskArn!

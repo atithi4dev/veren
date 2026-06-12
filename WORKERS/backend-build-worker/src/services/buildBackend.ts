@@ -29,7 +29,7 @@ const credentials: AwsCredentialIdentity = {
 }
 
 const ecsClient = new ECSClient({
-    region: "ap-south-1",
+    region: process.env.AWS_REGION!,
     credentials
 })
 
@@ -46,8 +46,8 @@ export async function buildBackend(
     deploymentId: string
 ): Promise<BuildReturn> {
 
-    let { installCommand, runCommand, version  } = build;
-    let buildVersion = version+"";
+    const { installCommand, runCommand, version  } = build;
+    const buildVersion = version+"";
     const envArray = [
         { name: "GIT_REPOSITORY__URL", value: url },
         { name: "NODE_VERSION", value: buildVersion },
