@@ -1,0 +1,26 @@
+{
+  "name": "log-worker",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/worker/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@clickhouse/client": "^1.18.5",
+    "@veren/domain": "*",
+    "dotenv": "^17.4.2",
+    "kafkajs": "^2.2.4",
+    "redis": "^5.12.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  }
+}
