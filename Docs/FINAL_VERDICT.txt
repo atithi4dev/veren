@@ -1,3 +1,7 @@
+A deployment platform is much larger than it looks from the outside. When I started Veren, I expected the system to be mostly about taking a GitHub repository, building it, and exposing a URL. Once I began building it, the real scope became much clearer.
+
+This is the larger platform map I was working toward. Some parts are implemented in Veren today, some are partially implemented, and some are future work that would take more time than I originally estimated.
+
 User / Frontend
      |
      v
