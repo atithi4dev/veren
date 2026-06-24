@@ -132,7 +132,7 @@ hostname and decides whether the visitor wants a frontend or backend app.
 
 For frontend projects, a hostname like `myapp.veren.site` resolves to a project
 ID and proxies the request to S3 under that project's artifact folder. For
-backend projects, a hostname like `api.myapp.veren.site` resolves to the public
+backend projects, a hostname like `api-myapp.veren.site` resolves to the public
 IP of the ECS backend service and proxies traffic to it.
 
 Redis is the fast route cache. MongoDB is the fallback when a route is missing
