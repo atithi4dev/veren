@@ -144,8 +144,11 @@ const initkafkaConsumer = async () => {
                 deployment_id: payload.deployment_id,
                 project_id: payload.project_id,
                 topic,
-                service: payload.service,
-                log: payload.message
+                level: payload.level,
+                stage: payload.stage,
+                service: topic === "frontend-builder-logs"? "frontend": "backend",
+                log: payload.message,
+                ts: payload.ts
             })
 
             // push to redis streams

@@ -5,9 +5,10 @@
 ## Guides -
 [~ Documentation]()
 
-[~ API Walkthrough](https://github.com/atithi4dev/veren/blob/main/Docs/API_DOCUMENTATION.md)
-[~ Contribution Guidelines](https://github.com/atithi4dev/veren/blob/main/Docs/CONTRIBUTING.md)
-[~ For Contributers](https://github.com/atithi4dev/veren/blob/main/Docs/GITHUB_SETUP.md)
+[~ ARCHITECTURE](https://github.com/atithi4dev/veren/blob/main/Docs/ARCHITECTURE.md)
+
+[~ API Walkthrough](https://github.com/atithi4dev/veren/blob/main/Docs/api-docs/API.md)
+
 [~ ECR IMAGES FOR USE CASE](https://github.com/atithi4dev/veren/blob/main/Docs/BUILDER_IMAGES_MAPPING.md)
 
 ## Project Setup -
@@ -19,15 +20,17 @@ git clone <repository-url>
 cd veren
 ``` 
 
-We assume you have already gone through the required configuration and added the necessary files as described in [@essentials](https://github.com/atithi4dev/veren/blob/main/Docs/GITHUB_SETUP.md) before starting the project.
+We assume you have already gone through the required configuration and added the necessary files as described in [@essentials](https://github.com/atithi4dev/veren/blob/main/Docs/GETTING_STARTED.md) before starting the project.
 
 **Start the services using Docker Compose:**
 ```bash
-docker compose up --build
+sudo docker compose -f docker-compose.dev.yml up --build
 ```
-Now you are ready to visit [api-guidelines](https://github.com/atithi4dev/veren/blob/main/Docs/API_DOCUMENTATION.md) to access the differnt routes and supported features. 
+Now you are ready to visit [api-guidelines](https://github.com/atithi4dev/veren/blob/main/Docs/api-docs/API.md) to access the differnt routes and supported features. 
 
 ## Architecture Overview -
+
+[~ ARCHITECTURE](https://github.com/atithi4dev/veren/blob/main/Docs/ARCHITECTURE.md)
 
 **VEREN** is built as a cloud-native, backend-first deployment platform using a service-oriented architecture:
 
@@ -50,7 +53,6 @@ As an aspiring developer, there may be design gaps, edge cases, or implementatio
 
 Reasonable changes and improvements will be reviewed and merged when possible, keeping in mind academic and development commitments.
 
-Please follow the [contribution guidelines](https://github.com/atithi4dev/veren/blob/main/Docs/CONTRIBUTING.md) below when opening issues or submitting PRs.
 
 ## Contribution Guidelines - 
 This project is open to help and suggestions rather than strict contributions.
@@ -63,12 +65,15 @@ Suggest changes
 
 Submit a pull request (even small ones)
 
-There are no strict rules—clarity and intent matter more than perfection.
+There are no strict rules - clarity and intent matter more than perfection.
 Any help or feedback is appreciated
 
 ## Support -
+
 Open an [issue](https://github.com/atithi4dev/veren/issues) on the GitHub repository.
+
 Tag on [Discord](https://discord.gg/tACgSEYz)
+
 Reach out via [email](atithisingh.dev@gmail.com) or project discussion.
 
 
