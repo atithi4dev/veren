@@ -10,13 +10,20 @@ import ProjectsContent from '../components/dashboard/ProjectsContent'
 import DeploymentsSection from '../components/dashboard/DeploymentsSection'
 import LogsSection from '../components/dashboard/LogsSection'
 import { EnvModal } from '../components/dashboard/EnvModal'
+import { CreateProjectModal } from '../components/modals/CreateProjectModal'
 import type { DeploymentRecord, ProfileUser, ProjectRecord } from '../components/dashboard/types'
 import type { LogsLimit } from '../api/logs.api'
+import type { BackendProjectPayload, FrontendProjectPayload, ProjectType } from '../api/types'
 
 const PROFILE_CACHE_KEY = 'veren-profile-cache'
 const PROJECTS_CACHE_KEY = 'veren-projects-cache'
 const SELECTED_PROJECT_CACHE_KEY = 'veren-selected-project'
 const PROJECTS_CACHE_SECRET = 'veren-projects-cache-v1'
+
+type ProjectsCachePayload = {
+  cachedAt: number
+  projects: ProjectRecord[]
+}
 
 const DashboardPage: React.FC = () => {
   const { themeMode, resolvedTheme, setThemeMode } = useTheme()
@@ -36,6 +43,7 @@ const DashboardPage: React.FC = () => {
   })
   const [projects, setProjects] = React.useState<ProjectRecord[]>([])
   const [isLoadingProjects, setIsLoadingProjects] = React.useState(false)
+  const [hasSyncedProjectsFromServer, setHasSyncedProjectsFromServer] = React.useState(false)
   const [deployments, setDeployments] = React.useState<DeploymentRecord[]>([])
   const [isLoadingDeployments, setIsLoadingDeployments] = React.useState(false)
   const [storedSelectedProject, setStoredSelectedProject] = React.useState<ProjectRecord | undefined>(undefined)
@@ -51,6 +59,8 @@ const DashboardPage: React.FC = () => {
   const [isEnvModalOpen, setIsEnvModalOpen] = React.useState(false)
   const [envVars, setEnvVars] = React.useState<EnvPair[]>([])
   const [isLoadingEnvVars, setIsLoadingEnvVars] = React.useState(false)
+  const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = React.useState(false)
+  const [isCreatingProject, setIsCreatingProject] = React.useState(false)
 
   const profileModalRef = React.useRef<HTMLDivElement | null>(null)
   const buildLogsTerminalRef = React.useRef<HTMLDivElement | null>(null)
@@ -97,8 +107,8 @@ const DashboardPage: React.FC = () => {
     )
   }, [])
 
-  const encryptProjectsPayload = React.useCallback(async (items: ProjectRecord[]): Promise<string> => {
-    const jsonValue = JSON.stringify(items)
+  const encryptProjectsPayload = React.useCallback(async (payload: ProjectsCachePayload): Promise<string> => {
+    const jsonValue = JSON.stringify(payload)
     const secretKey = await deriveProjectsCacheKey()
 
     if (!secretKey || !window.crypto?.getRandomValues) {
@@ -119,7 +129,31 @@ const DashboardPage: React.FC = () => {
     })
   }, [deriveProjectsCacheKey, toBase64])
 
-  const decryptProjectsPayload = React.useCallback(async (payload: string): Promise<ProjectRecord[] | null> => {
+  const decryptProjectsPayload = React.useCallback(async (payload: string): Promise<ProjectsCachePayload | null> => {
+    const normalizeCachedValue = (value: unknown): ProjectsCachePayload | null => {
+      if (Array.isArray(value)) {
+        return {
+          cachedAt: 0,
+          projects: value as ProjectRecord[],
+        }
+      }
+
+      if (
+        typeof value === 'object' &&
+        value !== null &&
+        Array.isArray((value as { projects?: unknown }).projects)
+      ) {
+        return {
+          cachedAt: typeof (value as { cachedAt?: unknown }).cachedAt === 'number'
+            ? (value as { cachedAt: number }).cachedAt
+            : 0,
+          projects: (value as { projects: ProjectRecord[] }).projects,
+        }
+      }
+
+      return null
+    }
+
     try {
       const parsed = JSON.parse(payload) as { version?: number; iv?: string; data?: string }
 
@@ -136,11 +170,11 @@ const DashboardPage: React.FC = () => {
           fromBase64(parsed.data),
         )
 
-        return JSON.parse(new TextDecoder().decode(decrypted)) as ProjectRecord[]
+        return normalizeCachedValue(JSON.parse(new TextDecoder().decode(decrypted)))
       }
     } catch {
       try {
-        return JSON.parse(window.atob(payload)) as ProjectRecord[]
+        return normalizeCachedValue(JSON.parse(window.atob(payload)))
       } catch {
         return null
       }
@@ -148,6 +182,15 @@ const DashboardPage: React.FC = () => {
 
     return null
   }, [deriveProjectsCacheKey, fromBase64])
+
+  const persistProjectsCache = React.useCallback(async (items: ProjectRecord[]) => {
+    const encryptedProjects = await encryptProjectsPayload({
+      cachedAt: Date.now(),
+      projects: items,
+    })
+
+    window.localStorage.setItem(PROJECTS_CACHE_KEY, encryptedProjects)
+  }, [encryptProjectsPayload])
 
   const normalizeProjects = React.useCallback((payload: unknown): ProjectRecord[] => {
     let list: unknown[] = []
@@ -529,12 +572,16 @@ const DashboardPage: React.FC = () => {
       return projectFromList
     }
 
-    if (storedSelectedProject && normalizeProjectRouteKey(storedSelectedProject.name) === routeKey) {
+    if (
+      !hasSyncedProjectsFromServer &&
+      storedSelectedProject &&
+      normalizeProjectRouteKey(storedSelectedProject.name) === routeKey
+    ) {
       return storedSelectedProject
     }
 
     return undefined
-  }, [normalizeProjectRouteKey, projects, selectedProjectNameFromRoute, storedSelectedProject])
+  }, [hasSyncedProjectsFromServer, normalizeProjectRouteKey, projects, selectedProjectNameFromRoute, storedSelectedProject])
 
   const selectedDeployment = React.useMemo(() => {
     if (!selectedDeploymentIdFromRoute) {
@@ -562,7 +609,7 @@ const DashboardPage: React.FC = () => {
     }
 
     return 'tw-bg-slate-400'
-    }, [])
+  }, [])
 
   const deploymentsBaseRoute = React.useMemo(() => {
     if (selectedProjectNameFromRoute) {
@@ -644,6 +691,83 @@ const DashboardPage: React.FC = () => {
       throw error
     }
   }, [selectedProject?.id])
+
+  const getCreateProjectErrorMessage = React.useCallback((error: unknown): string => {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'response' in error &&
+      typeof (error as { response?: unknown }).response === 'object' &&
+      (error as { response?: unknown }).response !== null
+    ) {
+      const response = (error as { response: { data?: unknown } }).response
+      const data = response.data
+
+      if (typeof data === 'object' && data !== null) {
+        const record = data as Record<string, unknown>
+
+        if (typeof record.error === 'string') {
+          return record.error
+        }
+
+        if (typeof record.message === 'string') {
+          return record.message
+        }
+      }
+    }
+
+    if (error instanceof Error && error.message) {
+      return error.message
+    }
+
+    return 'Unable to create project.'
+  }, [])
+
+  const handleCreateProject = React.useCallback(async (
+    type: ProjectType,
+    payload: FrontendProjectPayload | BackendProjectPayload,
+  ) => {
+    setIsCreatingProject(true)
+
+    try {
+      const response = type === 'frontend'
+        ? await projectsApi.createFrontend(payload as FrontendProjectPayload)
+        : await projectsApi.createBackend(payload as BackendProjectPayload)
+
+      const createData = unwrapApiResponse<unknown>(response.data)
+      const projectPayload = (
+        typeof createData === 'object' &&
+        createData !== null &&
+        'project' in createData
+      )
+        ? (createData as { project?: unknown }).project
+        : createData
+      const normalizedProject = normalizeProjects([projectPayload])[0]
+
+      if (!normalizedProject) {
+        return
+      }
+
+      cacheSelectedProject(normalizedProject)
+
+      setProjects((previousProjects) => {
+        const nextProjects = [
+          normalizedProject,
+          ...previousProjects.filter((project) => project.id !== normalizedProject.id),
+        ]
+
+        void persistProjectsCache(nextProjects)
+
+        return nextProjects
+      })
+
+      navigate(`/dashboard/${encodeURIComponent(normalizedProject.name)}`)
+    } catch (error) {
+      throw new Error(getCreateProjectErrorMessage(error))
+    } finally {
+      setIsCreatingProject(false)
+    }
+  }, [cacheSelectedProject, getCreateProjectErrorMessage, navigate, normalizeProjects, persistProjectsCache])
 
   const ownerGithubHref = React.useMemo(() => {
     const repoUrl = selectedProject?.git?.repoUrl ?? selectedProject?.gitRepoUrl
@@ -799,7 +923,7 @@ const DashboardPage: React.FC = () => {
       })
 
       setProjects((previousProjects) => {
-        return previousProjects.map((project) => {
+        const nextProjects = previousProjects.map((project) => {
           const nextDeployments = (project.deployments ?? []).map((deployment) => {
             if (deployment.id !== selectedDeploymentId) {
               return deployment
@@ -829,6 +953,10 @@ const DashboardPage: React.FC = () => {
             currentDeployment: nextCurrentDeployment,
           }
         })
+
+        void persistProjectsCache(nextProjects)
+
+        return nextProjects
       })
     }
 
@@ -938,7 +1066,7 @@ const DashboardPage: React.FC = () => {
         eventSource.close()
       }
     }
-  }, [extractLogLines, openSettingPanels, selectedDeployment?.id])
+  }, [extractLogLines, openSettingPanels, persistProjectsCache, selectedDeployment?.id])
 
   React.useEffect(() => {
     const terminal = buildLogsTerminalRef.current
@@ -1104,8 +1232,14 @@ const DashboardPage: React.FC = () => {
 
     if (matchedProject) {
       cacheSelectedProject(matchedProject)
+      return
     }
-  }, [cacheSelectedProject, normalizeProjectRouteKey, projects, selectedProjectNameFromRoute])
+
+    if (hasSyncedProjectsFromServer) {
+      window.localStorage.removeItem(SELECTED_PROJECT_CACHE_KEY)
+      setStoredSelectedProject(undefined)
+    }
+  }, [cacheSelectedProject, hasSyncedProjectsFromServer, normalizeProjectRouteKey, projects, selectedProjectNameFromRoute])
 
   React.useEffect(() => {
     if (!isDeploymentsRoute) {
@@ -1136,42 +1270,44 @@ const DashboardPage: React.FC = () => {
     let isMounted = true
 
     const loadProjects = async () => {
-      setIsLoadingProjects(true)
+      let hasHydratedFromCache = false
 
       try {
         const cachedProjects = window.localStorage.getItem(PROJECTS_CACHE_KEY)
 
         if (cachedProjects) {
-          const decryptedProjects = await decryptProjectsPayload(cachedProjects)
+          const decryptedCache = await decryptProjectsPayload(cachedProjects)
 
-          if (decryptedProjects && decryptedProjects.length > 0) {
-            const hasCreatedAtData = decryptedProjects.some((project) => Boolean(project.createdAt))
-
-            if (!hasCreatedAtData) {
-              window.localStorage.removeItem(PROJECTS_CACHE_KEY)
-            } else {
-              if (isMounted) {
-                setProjects(decryptedProjects)
-                setIsLoadingProjects(false)
-              }
-              return
+          if (decryptedCache) {
+            if (isMounted) {
+              setProjects(decryptedCache.projects)
             }
+
+            hasHydratedFromCache = true
+          } else {
+            window.localStorage.removeItem(PROJECTS_CACHE_KEY)
           }
-
-          window.localStorage.removeItem(PROJECTS_CACHE_KEY)
         }
+      } catch {
+        window.localStorage.removeItem(PROJECTS_CACHE_KEY)
+      }
 
+      if (isMounted) {
+        setIsLoadingProjects(!hasHydratedFromCache)
+      }
+
+      try {
         const response = await projectsApi.list()
         const normalizedProjects = normalizeProjects(unwrapApiResponse<unknown>(response.data))
 
         if (isMounted) {
           setProjects(normalizedProjects)
+          setHasSyncedProjectsFromServer(true)
         }
 
-        const encryptedProjects = await encryptProjectsPayload(normalizedProjects)
-        window.localStorage.setItem(PROJECTS_CACHE_KEY, encryptedProjects)
+        await persistProjectsCache(normalizedProjects)
       } catch {
-        if (isMounted) {
+        if (isMounted && !hasHydratedFromCache) {
           setProjects([])
         }
       } finally {
@@ -1186,7 +1322,7 @@ const DashboardPage: React.FC = () => {
     return () => {
       isMounted = false
     }
-  }, [decryptProjectsPayload, encryptProjectsPayload, normalizeProjects])
+  }, [decryptProjectsPayload, normalizeProjects, persistProjectsCache])
 
   React.useEffect(() => {
     if (!isDeploymentsRoute) {
@@ -1245,6 +1381,7 @@ const DashboardPage: React.FC = () => {
         setIsFindModalOpen(false)
         setIsProfileModalOpen(false)
         setIsMobileSidebarOpen(false)
+        setIsCreateProjectModalOpen(false)
       }
     }
 
@@ -1345,7 +1482,10 @@ const DashboardPage: React.FC = () => {
           </section>
 
           <section className={isDarkTheme ? 'tw-min-h-0 tw-flex-1 tw-overflow-hidden tw-bg-black tw-p-4 md:tw-p-5' : 'tw-min-h-0 tw-flex-1 tw-overflow-hidden tw-bg-slate-100 tw-p-4 md:tw-p-5'}>
-            <div className={isDarkTheme ? 'tw-h-full tw-overflow-y-auto tw-scrollbar-none tw-rounded-xl tw-border tw-border-white/15 tw-bg-black tw-p-4 md:tw-p-5' : 'tw-h-full tw-overflow-y-auto tw-scrollbar-none tw-rounded-xl tw-border tw-border-slate-300 tw-bg-white tw-p-4 md:tw-p-5'}>
+            <div
+              className={isDarkTheme ? 'tw-h-full tw-overflow-y-auto tw-scrollbar-none tw-rounded-xl tw-border tw-border-white/15 tw-bg-black tw-p-4 md:tw-p-5' : 'tw-h-full tw-overflow-y-auto tw-scrollbar-none tw-rounded-xl tw-border tw-border-slate-300 tw-bg-white tw-p-4 md:tw-p-5'}
+              data-dashboard-main="true"
+            >
               {isDeploymentsRoute ? (
                 <DeploymentsSection
                   isDarkTheme={isDarkTheme}
@@ -1382,6 +1522,7 @@ const DashboardPage: React.FC = () => {
                   getGitRepoHref={getGitRepoHref}
                   getDomainHref={getDomainHref}
                   formatCreatedAt={formatCreatedAt}
+                  onOpenCreateProject={() => setIsCreateProjectModalOpen(true)}
                   onRedeployProject={handleRedeployProject}
                   onViewDeployments={handleViewDeployments}
                   onOpenEnvModal={handleOpenEnvModal}
@@ -1428,15 +1569,22 @@ const DashboardPage: React.FC = () => {
           setIsFindModalOpen(false)
         }}
       />
-
-      <EnvModal
-        isOpen={isEnvModalOpen}
-        onClose={() => setIsEnvModalOpen(false)}
-        projectName={selectedProject?.name || ''}
-        envVars={envVars}
-        onSave={handleSaveEnvVars}
+      {isEnvModalOpen && (
+        <EnvModal
+          isOpen={isEnvModalOpen}
+          onClose={() => setIsEnvModalOpen(false)}
+          projectName={selectedProject?.name || ''}
+          envVars={envVars}
+          onSave={handleSaveEnvVars}
+          isDarkTheme={isDarkTheme}
+          isLoading={isLoadingEnvVars}
+        />)}
+      <CreateProjectModal
+        isOpen={isCreateProjectModalOpen}
+        onClose={() => setIsCreateProjectModalOpen(false)}
+        onCreate={handleCreateProject}
         isDarkTheme={isDarkTheme}
-        isLoading={isLoadingEnvVars}
+        isCreating={isCreatingProject}
       />
     </div>
   )

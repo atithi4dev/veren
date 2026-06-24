@@ -44,3 +44,83 @@
 .scrollbar-aesthetic::-webkit-scrollbar-thumb:hover {
 	background: linear-gradient(180deg, rgba(59, 130, 246, 0.8) 0%, rgba(99, 102, 241, 0.7) 100%);
 }
+
+html.light .tw-text-md-neutral-40,
+html.light .tw-text-md-neutral-50,
+html.light .tw-text-md-neutral-60,
+html.light .tw-text-md-neutral-65,
+html.light .tw-text-md-neutral-70,
+html.light .tw-text-md-neutral-80,
+html.light .tw-text-slate-300,
+html.light .tw-text-slate-400,
+html.light .tw-text-slate-500 {
+	color: #334155;
+}
+
+html.light .tw-text-md-neutral-90 {
+	color: #1e293b;
+}
+
+html.light .tw-border-md-neutral-70,
+html.light .tw-border-md-neutral-80,
+html.light .tw-border-md-neutral-90,
+html.light .tw-border-slate-200 {
+	border-color: #cbd5e1;
+}
+
+html.light .placeholder\:tw-text-md-neutral-40::placeholder,
+html.light .placeholder\:tw-text-slate-400::placeholder,
+html.light .placeholder\:tw-text-slate-500::placeholder {
+	color: #64748b;
+}
+
+html.light .hover\:tw-text-md-neutral-50:hover,
+html.light .hover\:tw-text-slate-400:hover,
+html.light .hover\:tw-text-slate-500:hover {
+	color: #0f172a;
+}
+
+[data-dashboard-main="true"] .tw-text-xs,
+[data-dashboard-main="true"] [class~="tw-text-[10px]"],
+[data-dashboard-main="true"] [class~="tw-text-[11px]"] {
+	font-size: 0.875rem;
+	line-height: 1.35rem;
+}
+
+[data-dashboard-main="true"] [class~="tw-text-[12px]"] {
+	font-size: 0.9375rem;
+	line-height: 1.45rem;
+}
+
+[data-dashboard-main="true"] .tw-text-sm,
+[data-dashboard-main="true"] [class~="tw-text-[14px]"] {
+	font-size: 1rem;
+	line-height: 1.5rem;
+}
+
+[data-dashboard-main="true"] [class~="tw-text-[14.5px]"] {
+	font-size: 1rem;
+	line-height: 1.5rem;
+}
+
+[data-dashboard-main="true"] .tw-text-base {
+	font-size: 1.125rem;
+	line-height: 1.65rem;
+}
+
+[data-dashboard-sidebar="true"] .tw-text-base {
+	font-size: 0.9375rem;
+	line-height: 1.35rem;
+}
+
+[data-dashboard-sidebar="true"] .tw-text-sm,
+[data-dashboard-sidebar="true"] [class~="tw-text-[14px]"],
+[data-dashboard-sidebar="true"] [class~="tw-text-[14.5px]"] {
+	font-size: 0.9375rem;
+	line-height: 1.35rem;
+}
+
+[data-dashboard-sidebar="true"] .tw-text-xs {
+	font-size: 0.8125rem;
+	line-height: 1.2rem;
+}

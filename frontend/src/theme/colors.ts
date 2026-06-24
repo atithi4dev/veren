@@ -224,7 +224,7 @@ export const applyElevationOverlay = (
   baseColor: string,
   elevationLevel: keyof typeof ElevationOverlays
 ): string => {
-  const opacity = ElevationOverlays[elevationLevel]
+  void ElevationOverlays[elevationLevel]
   // This is a simplified implementation
   // In production, you'd want to use a proper color manipulation library
   // For now, we'll return a comment and handle it in Tailwind
