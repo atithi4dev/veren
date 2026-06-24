@@ -7,6 +7,7 @@ import {
   FiGlobe,
   FiGithub,
   FiMoreHorizontal,
+  FiPlus,
   FiRefreshCcw,
   FiServer,
   FiSettings,
@@ -25,6 +26,7 @@ type ProjectsContentProps = {
   getGitRepoHref: (gitUrl?: string) => string | undefined
   getDomainHref: (domain?: string) => string | undefined
   formatCreatedAt: (value?: string) => string
+  onOpenCreateProject: () => void
   onRedeployProject: (projectId: string) => void
   onViewDeployments: (projectName: string) => void
   onOpenEnvModal: () => void
@@ -42,6 +44,7 @@ const ProjectsContent: React.FC<ProjectsContentProps> = ({
   getGitRepoHref,
   getDomainHref,
   formatCreatedAt,
+  onOpenCreateProject,
   onRedeployProject,
   onViewDeployments,
   onOpenEnvModal,
@@ -284,10 +287,23 @@ const ProjectsContent: React.FC<ProjectsContentProps> = ({
 
   return (
     <>
-      <h3 className="tw-text-base tw-font-semibold">Projects</h3>
-      <p className={isDarkTheme ? 'tw-mt-1 tw-text-xs tw-text-slate-300' : 'tw-mt-1 tw-text-xs tw-text-md-neutral-60'}>
-        Your deployed and connected projects.
-      </p>
+      <div className="tw-flex tw-flex-col tw-gap-3 sm:tw-flex-row sm:tw-items-start sm:tw-justify-between">
+        <div>
+          <h3 className="tw-text-base tw-font-semibold">Projects</h3>
+          <p className={isDarkTheme ? 'tw-mt-1 tw-text-xs tw-text-slate-300' : 'tw-mt-1 tw-text-xs tw-text-md-neutral-60'}>
+            Your deployed and connected projects.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onOpenCreateProject}
+          className={isDarkTheme ? 'tw-inline-flex tw-items-center tw-justify-center tw-gap-2 tw-rounded-lg tw-border tw-border-blue-400/30 tw-bg-blue-600 tw-px-4 tw-py-2.5 tw-text-sm tw-font-semibold tw-text-white tw-shadow-lg tw-shadow-blue-600/20 tw-transition-all hover:tw--translate-y-0.5 hover:tw-bg-blue-500' : 'tw-inline-flex tw-items-center tw-justify-center tw-gap-2 tw-rounded-lg tw-border tw-border-blue-600 tw-bg-blue-600 tw-px-4 tw-py-2.5 tw-text-sm tw-font-semibold tw-text-white tw-shadow-lg tw-shadow-blue-600/20 tw-transition-all hover:tw--translate-y-0.5 hover:tw-bg-blue-500'}
+        >
+          <FiPlus className="tw-text-base" />
+          <span>Create Project</span>
+        </button>
+      </div>
 
       {isLoadingProjects && (
         <p className={isDarkTheme ? 'tw-mt-4 tw-text-xs tw-text-slate-300' : 'tw-mt-4 tw-text-xs tw-text-md-neutral-60'}>
@@ -322,7 +338,7 @@ const ProjectsContent: React.FC<ProjectsContentProps> = ({
                       className={isDarkTheme ? 'tw-relative tw-h-9 tw-w-9 tw-shrink-0 tw-overflow-hidden tw-rounded-sm tw-border tw-border-white/20 hover:tw-opacity-90' : 'tw-relative tw-h-9 tw-w-9 tw-shrink-0 tw-overflow-hidden tw-rounded-sm tw-border tw-border-md-neutral-70 hover:tw-opacity-90'}
                     >
                       <span
-                        className="tw-absolute tw-inset-0 tw-bg-gradient-to-tr tw-from-blue-500 tw-to-cyan-400"
+                        className="tw-absolute tw-inset-0 tw-bg-gradient-to-tr tw-from-blue-600 tw-to-cyan-600"
                         style={{ clipPath: 'polygon(0 0,100% 0,0 100%)' }}
                       />
                       <span

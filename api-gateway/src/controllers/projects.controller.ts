@@ -101,7 +101,7 @@ const createBackendProject = asyncHandler(async (req: Request, res: Response) =>
             type: "server"
         },
         domains: {
-            subdomain: `https://api.${projectName.toLowerCase()}.veren.site`,
+            subdomain: `https://api-${projectName.toLowerCase()}.veren.site`,
         },
         createdBy: req.user?.id
     }

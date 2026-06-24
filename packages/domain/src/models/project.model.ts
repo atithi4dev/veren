@@ -66,7 +66,6 @@ const projectSchema = new Schema<IProject>({
         },
         ip: {
             type: String,
-            unique: true
         }
     },
 

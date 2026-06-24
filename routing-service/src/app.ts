@@ -26,7 +26,7 @@ app.use(express.static('public'));
 
 app.use('/health', healthCheckRouter)
 const proxy = httpProxy.createProxyServer();
-const BASEPATH = `https://veren-frontend-builds.s3.ap-south-1.amazonaws.com/__outputs/`
+const BASEPATH = process.env.S3_BASEPATH;
 
 
 const client = createClient({

@@ -7,7 +7,6 @@ import {
   FiCloud,
   FiCpu,
   FiDatabase,
-  FiFileText,
   FiFlag,
   FiFolder,
   FiGlobe,
@@ -17,7 +16,6 @@ import {
   FiSearch,
   FiSettings,
   FiShield,
-  FiUploadCloud,
 } from 'react-icons/fi'
 import { CiCirclePlus } from 'react-icons/ci'
 import { IoExitOutline } from 'react-icons/io5'
@@ -85,6 +83,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     <aside className={isDarkTheme
       ? `tw-fixed tw-inset-y-0 tw-left-0 tw-z-50 tw-flex tw-h-screen tw-w-[17rem] tw-transform tw-flex-col tw-border-r tw-border-md-neutral-30 tw-bg-md-neutral-12 tw-p-4 tw-transition-transform md:tw-static md:tw-z-auto md:tw-w-[19rem] md:tw-translate-x-0 ${isMobileOpen ? 'tw-translate-x-0' : '-tw-translate-x-full'}`
       : `tw-fixed tw-inset-y-0 tw-left-0 tw-z-50 tw-flex tw-h-screen tw-w-[17rem] tw-transform tw-flex-col tw-border-r tw-border-md-neutral-80 tw-bg-md-neutral-99 tw-p-4 tw-transition-transform md:tw-static md:tw-z-auto md:tw-w-[19rem] md:tw-translate-x-0 ${isMobileOpen ? 'tw-translate-x-0' : '-tw-translate-x-full'}`}
+      data-dashboard-sidebar="true"
     >
       <div className={isDarkTheme ? 'tw-rounded-lg tw-border tw-border-md-neutral-40 tw-bg-md-neutral-17 tw-p-3' : 'tw-rounded-lg tw-border tw-border-md-neutral-80 tw-bg-md-neutral-98 tw-p-3'}>
         <div className="tw-flex tw-items-center tw-gap-2.5">
@@ -132,7 +131,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               >
                 <span className="tw-flex tw-items-center tw-gap-2.5">
                   <ItemIcon className={isDarkTheme ? (isActive ? 'tw-text-[14px] md:tw-text-[14.5px] tw-text-white' : 'tw-text-[14px] md:tw-text-[14.5px] tw-text-md-neutral-80') : (isActive ? 'tw-text-[14px] md:tw-text-[14.5px] tw-text-md-neutral-10' : 'tw-text-[14px] md:tw-text-[14.5px] tw-text-md-neutral-50')} />
-                  <span className={isDarkTheme ? (isActive ? 'tw-text-[14px] md:tw-text-[14.5px] tw-text-white' : 'tw-text-[14px] md:tw-text-[14.5px] tw-text-md-neutral-80') : (isActive ? 'tw-text-[14px] md:tw-text-[14.5px] tw-text-md-neutral-10' : 'tw-text-[14px] md:tw-text-[14.5px] tw-text-md-neutral-50')}>{item.label}</span>
+                  <span className={isDarkTheme ? (isActive ? 'tw-text-[14px] md:tw-text-[14.5px] tw-font-bold tw-text-white' : 'tw-text-[14px] md:tw-text-[14.5px] tw-font-semibold tw-text-md-neutral-80') : (isActive ? 'tw-text-[14px] md:tw-text-[14.5px] tw-font-bold tw-text-md-neutral-10' : 'tw-text-[14px] md:tw-text-[14.5px] tw-font-semibold tw-text-md-neutral-50')}>{item.label}</span>
                 </span>
                 {item.shortcut && (
                   <span className={isDarkTheme ? 'tw-rounded-md tw-border tw-border-white/25 tw-bg-black tw-px-2 tw-py-0.5 tw-text-xs tw-font-medium tw-text-md-neutral-80' : 'tw-rounded-md tw-border tw-border-md-neutral-80 tw-bg-md-neutral-99 tw-px-2 tw-py-0.5 tw-text-xs tw-font-medium tw-text-md-neutral-50'}>

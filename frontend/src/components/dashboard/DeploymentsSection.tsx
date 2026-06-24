@@ -221,11 +221,11 @@ const DeploymentsSection: React.FC<DeploymentsSectionProps> = ({
                       }}
                     >
                       {isLoadingBuildLogs && buildLogLines.length === 0 ? (
-                        <p className="tw-text-white">Loading build logs...</p>
+                        <p className={isDarkTheme ? 'tw-text-white' : 'tw-text-slate-900'}>Loading build logs...</p>
                       ) : (
                         buildLogLines.map((line, index) => (
                           <div key={`${line}-${index}`}>
-                            <p className="tw-whitespace-pre-wrap tw-break-words tw-text-white tw-leading-tight">{line}</p>
+                            <p className={isDarkTheme ? 'tw-whitespace-pre-wrap tw-break-words tw-text-white tw-leading-tight' : 'tw-whitespace-pre-wrap tw-break-words tw-text-slate-900 tw-leading-tight'}>{line}</p>
                             <div className={isDarkTheme ? 'tw-my-1 tw-h-px tw-bg-md-neutral-40/40' : 'tw-my-1 tw-h-px tw-bg-md-neutral-80/30'} />
                           </div>
                         ))
