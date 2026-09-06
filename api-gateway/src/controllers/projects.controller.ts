@@ -50,7 +50,7 @@ const createFrontendProject = asyncHandler(async (req: Request, res: Response) =
     try {
         project = await Project.create(projectData);
     } catch (error: any) {
-        console.log(`INSIDE MONGO ERROR CATCHED ${error}` )
+        logger.error(`INSIDE MONGO ERROR CATCHED ${error}`)
         if (error.code == 11000) {
             return res.status(409).json({
                 error: "Project name already taken"
@@ -114,7 +114,7 @@ const createBackendProject = asyncHandler(async (req: Request, res: Response) =>
     try {
         project = await Project.create(projectData);
     } catch (error: any) {
-        console.log(`INSIDE MONGO ERROR CATCHED ${error}` )
+        logger.error(`INSIDE MONGO ERROR CATCHED ${error}`)
         if (error.code == 11000) {
             return res.status(409).json({
                 error: "Project name already taken"

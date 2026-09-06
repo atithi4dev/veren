@@ -7,8 +7,6 @@ const client = new ECRClient({
 export default async function ecrImageExistsCheck(fullImageTag:string) {
     try {
         const {repositoryName, imageTag} = parseEcrImageUri(fullImageTag)
-        console.log(fullImageTag);
-        console.log(imageTag);
         await client.send(
             new DescribeImagesCommand({
                 repositoryName: process.env?.BACKENDSTORAGELAYERREPO!,
