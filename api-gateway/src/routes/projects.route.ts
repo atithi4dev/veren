@@ -3,6 +3,7 @@ import { verifyJwt } from "../middlewares/auth.middlewares.js";
 import {
     createBackendProject,
     createFrontendProject,
+    rollbackProject,
     // updateProjectConfigUser,
     getAllProjects
 } from "../controllers/projects.controller.js";
@@ -17,5 +18,7 @@ router.route("/f")
     
 router.route("/b")
     .post(verifyJwt, createBackendProject)
+router.route("/rollback")
+    .post(verifyJwt, rollbackProject)
 
 export default router;

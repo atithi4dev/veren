@@ -1,8 +1,9 @@
 import { apiClient } from './client'
+import { env } from '../config/env'
 
 export type LogsLimit = 500 | 1000 | 2500 | 5000;
 
-const loggerServiceUrl = (import.meta.env.VITE_LOGS_STREAM_BASE_URL ?? 'http://localhost:8007/api/v1').replace(/\/$/, '')
+const loggerServiceUrl = env.logsStreamBaseUrl.replace(/\/$/, '')
 
 export const logsApi = {
   getBuildLogs: (deploymentId: string) => apiClient.get(`/b/logs/${deploymentId}`),

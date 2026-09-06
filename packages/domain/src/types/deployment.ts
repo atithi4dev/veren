@@ -3,6 +3,10 @@ import { Types } from "mongoose";
 export interface IDeployment {
     _id: Types.ObjectId;
 
+    type: "deploy" | "rollback";
+    rollBackTo?: Types.ObjectId;
+    rollBackFrom?: Types.ObjectId;
+
     projectId: Types.ObjectId;
     owner: Types.ObjectId,
     status: "queued" | "building" | "deployed" | "failed";
@@ -15,7 +19,8 @@ export interface IDeployment {
     backendImageUrl?: string;
     backendECSContainerArn?: string;
     artifactUrl?: string;
-    error?: IError; 
+    artifactAvailable?: boolean;
+    error?: IError;
     rollBackArtifactUrl?: string
     startedAt: Date;
     finishedAt?: Date;

@@ -122,7 +122,27 @@ const initkafkaConsumer = async () => {
     await bufferRedisStream.connect();
 
     await consumer.subscribe({ topic: 'frontend-builder-logs', fromBeginning: true });
+    // await consumer.subscribe({ topic: 'backend-runtime-logs', fromBeginning: true });
 
+    // TODO : 
+    //   Backend ECS
+    //       ↓
+    //   CloudWatch Logs
+    //       ↓
+    //   Subscription Filter
+    //       ↓
+    //   Lambda
+    //       ↓
+    //   Kafka
+    //       ↓
+    //   logs-worker
+    //       ├──────────────→ Redis Stream
+    //       │                    ↓
+    //       │                   SSE
+    //       │
+    //       └──────────────→ ClickHouse
+    //                            ↓
+    //                         History
     await consumer.run({
         eachMessage: async ({ topic, partition, message }) => {
             const raw = message.value?.toString();

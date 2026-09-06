@@ -3,10 +3,11 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { initializeApi } from './api'
+import { env } from './config/env.ts'
 
 initializeApi({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8001/api/v1',
-  refreshEndpoint: '/auth/refresh-token',
+  baseURL: env.apiBaseUrl,
+  refreshEndpoint: env.authRefreshEndpoint,
   withCredentials: true,
 })
 

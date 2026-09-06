@@ -1,4 +1,5 @@
 import { apiClient } from './client'
+import { env } from '../config/env'
 
 export const authApi = {
   me: async () => {
@@ -6,7 +7,7 @@ export const authApi = {
     console.log('[authApi.me] /auth/me response:', response.data)
     return response
   },
-  refresh: () => apiClient.post('/auth/refresh-token', {}),
+  refresh: () => apiClient.post(env.authRefreshEndpoint, {}),
   logout: () => apiClient.get('/auth/logout'),
   loginRedirect: (apiOrigin: string) => {
     window.location.href = `${apiOrigin}/api/v1/auth/login`

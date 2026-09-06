@@ -42,6 +42,7 @@ app.use(async (req, res) => {
     const hostname = req.hostname;
     const parts = hostname.split(".");
 
+    // LOCAL : http://api.vercel.localhost:8004/
     let isApiRequest = false;
     let projectName = "";
 
@@ -67,6 +68,7 @@ app.use(async (req, res) => {
 
             await client.set(`backend:${projectName}`, backendIp);
         }
+        // local proxy setup
         return proxy.web(req, res, {
             target: `http://${backendIp}`,
             changeOrigin: true

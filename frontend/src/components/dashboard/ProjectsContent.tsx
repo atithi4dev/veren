@@ -9,6 +9,7 @@ import {
   FiMoreHorizontal,
   FiPlus,
   FiRefreshCcw,
+  FiRotateCcw,
   FiServer,
   FiSettings,
 } from 'react-icons/fi'
@@ -28,6 +29,7 @@ type ProjectsContentProps = {
   formatCreatedAt: (value?: string) => string
   onOpenCreateProject: () => void
   onRedeployProject: (projectId: string) => void
+  onRollbackProject: (projectId: string) => void
   onViewDeployments: (projectName: string) => void
   onOpenEnvModal: () => void
 }
@@ -46,6 +48,7 @@ const ProjectsContent: React.FC<ProjectsContentProps> = ({
   formatCreatedAt,
   onOpenCreateProject,
   onRedeployProject,
+  onRollbackProject,
   onViewDeployments,
   onOpenEnvModal,
 }) => {
@@ -143,6 +146,21 @@ const ProjectsContent: React.FC<ProjectsContentProps> = ({
                 >
                   <FiRefreshCcw className="tw-text-base" />
                   <span>Redeploy</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!selectedProject.id) {
+                      return
+                    }
+
+                    onRollbackProject(selectedProject.id)
+                  }}
+                  className={isDarkTheme ? 'tw-inline-flex tw-items-center tw-gap-2 tw-rounded-md tw-border tw-border-md-neutral-40 tw-bg-md-neutral-17 tw-px-4 tw-py-2 tw-text-sm tw-font-medium tw-text-md-neutral-90 hover:tw-bg-md-neutral-25 tw-transition-all' : 'tw-inline-flex tw-items-center tw-gap-2 tw-rounded-md tw-border tw-border-md-neutral-70 tw-bg-md-neutral-95 tw-px-4 tw-py-2 tw-text-sm tw-font-medium tw-text-md-neutral-10 hover:tw-bg-md-neutral-90 tw-transition-all'}
+                >
+                  <FiRotateCcw className="tw-text-base" />
+                  <span>Rollback</span>
                 </button>
 
                 <button

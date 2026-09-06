@@ -50,7 +50,7 @@ const createFrontendProject = asyncHandler(async (req: Request, res: Response) =
     try {
         project = await Project.create(projectData);
     } catch (error: any) {
-        logger.info("INSIDE MONGO ERROR CATCHED", error.message)
+        console.log(`INSIDE MONGO ERROR CATCHED ${error}` )
         if (error.code == 11000) {
             return res.status(409).json({
                 error: "Project name already taken"
@@ -63,7 +63,11 @@ const createFrontendProject = asyncHandler(async (req: Request, res: Response) =
         logger.info("Not of project error")
         throw new ApiError(500, "Unable to Create Project at the moment.")
     }
-    await registerGithubWebhook(project.git.repoUrl, req.session.githubToken!, project._id.toString())
+    try {
+        await registerGithubWebhook(project.git.repoUrl, req.session.githubToken!, project._id.toString())
+    } catch (error) {
+        await Project.findOneAndDelete({_id: project.id});
+    }
     return res.status(201).json(
         new ApiResponse(201, { sucess: true, project }, "Project created Successfully")
     )
@@ -110,7 +114,7 @@ const createBackendProject = asyncHandler(async (req: Request, res: Response) =>
     try {
         project = await Project.create(projectData);
     } catch (error: any) {
-        logger.info("INSIDE MONGO ERROR CATCHED", error.message)
+        console.log(`INSIDE MONGO ERROR CATCHED ${error}` )
         if (error.code == 11000) {
             return res.status(409).json({
                 error: "Project name already taken"
@@ -123,7 +127,11 @@ const createBackendProject = asyncHandler(async (req: Request, res: Response) =>
         logger.info("Not of project error")
         throw new ApiError(500, "Unable to Create Project at the moment.")
     }
-    await registerGithubWebhook(project.git.repoUrl, req.session.githubToken!, project._id.toString())
+    try {
+        await registerGithubWebhook(project.git.repoUrl, req.session.githubToken!, project._id.toString())
+    } catch (error) {
+        await Project.findOneAndDelete({_id: project.id});
+    }
     
     return res.status(201).json(
         new ApiResponse(201, { sucess: true, project }, "Project created Successfully")
@@ -169,6 +177,33 @@ const deleteProject = asyncHandler(async (req: Request, res: Response) => {
 
 })
 
+const rollbackProject = asyncHandler(async (req:Request, res: Response)=>{
+    const {projectId} = req.body;
+    if(!projectId){
+        throw new ApiError(404, "Project with project id not found.");
+    }
+    
+    const project = await Project.findById(projectId);
+    
+    if(!project){
+        throw new ApiError(404, "Project with project id not found.");
+    }
+
+    if(project.type === "frontend"){
+        // get artifact url , 
+        //  if old saved, swap , and delete new one
+        // if current is first deployment , no rollback allowed
+        // if    
+    }else if(project.type === "backend"){
+
+    }else{
+        throw new ApiError(500, "Internal Server Error.");
+    }
+
+    return res.status(200).json({msg:"Project queued for rollback."});
+
+})
+
 export {
-    createBackendProject, createFrontendProject, getAllProjects,
+    createBackendProject, createFrontendProject, getAllProjects, rollbackProject
 }

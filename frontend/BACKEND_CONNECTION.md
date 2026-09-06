@@ -208,6 +208,10 @@ deploymentApi.listAll()                       // GET /deployment
 deploymentApi.listByProject(projectId)        // GET /deployment?projectId={projectId}
 ```
 
+```typescript
+projectsApi.rollbackProject(payload)          // POST /projects/rollback
+```
+
 ### Logs Endpoints ([src/api/logs.api.ts](src/api/logs.api.ts))
 
 ```typescript

@@ -56,7 +56,8 @@ const deployProject = asyncHandler(async (req: Request, res: Response) => {
   });
 
   await Project.findByIdAndUpdate(projectId, {
-    $set: { deployments: newDeployment._id,currentDeployment: newDeployment._id },
+    $push: { deployments: newDeployment._id },
+    $set: { currentDeployment: newDeployment._id },
   });
 
   const jobOptions = {
@@ -203,10 +204,96 @@ const deployTo = asyncHandler(async (req: Request, res: Response) => {
   // .select("number");
 })
 
-const roleBackProject = asyncHandler(async (req: Request, res: Response) => {
+// const roleBackProject = asyncHandler(async (req: Request, res: Response) => {
+//   const { projectId } = req.params;
+//   if (!projectId || typeof projectId !== "string") {
+//     throw new ApiError(400, "Project Id is required.")
+//   }
 
-})
+//   const userId = req.user?.id;
+//   if (!userId) {
+//     throw new ApiError(401, "Unauthorized");
+//   }
+
+//   const project = await Project.findById(projectId);
+
+//   if (!project) {
+//     throw new ApiError(404, "Project not found.");
+//   }
+//   if (!project.createdBy.equals(userId)) {
+//     throw new ApiError(403, "Unauthorized");
+//   }
+//   if (!project.currentDeployment) {
+//     throw new ApiError(404, "No deployment found for rollback.")
+//   }
+//   if (!req.session.githubToken) {
+//     throw new ApiError(400, "Github token missing.");
+//   }
+
+//   const previousDeploymentId = project.deployments[project.deployments.length - 2];
+//   if (!previousDeploymentId) {
+//     throw new ApiError(404, "Previous deployment not found.")
+//   }
+
+//   const deployment = await Deployment.findById(previousDeploymentId);
+//   if (!deployment) {
+//     throw new ApiError(404, "Previous deployment not found");
+//   }
+// // artifact has never been set
+//   if (!deployment.artifactAvailable) {
+//     throw new ApiError(404, "No rollback allowed further.");
+//   }
+  
+//   const rollbackDeployment = await Deployment.create({
+//     projectId: project._id,
+//     owner: userId,
+//     status: "queued",
+//     type: "rollback",
+//     rollBackFrom: project.currentDeployment,
+//     rollBackTo: previousDeploymentId,
+//     startedAt: Date.now()
+//   })
+
+//   const jobOptions = {
+//     attempts: 1,
+//     backoff: {
+//       type: "exponential" as const,
+//       delay: 1000,
+//     },
+//     removeOnComplete: true,
+//     removeOnFail: true,
+//   };
+//   // WONT WORK FOR NOW, WE ARENT USING COMMIT HASH YET
+//   if (project.type == "backend") {
+//     const backendJobData = {
+//       projectId: project._id.toString(),
+//       deploymentId: previousDeploymentId.toString(),
+//       repoUrl: project.git.repoUrl,
+//       backendDirPath: project.entryDirectory,
+//       build: {
+//         installCommand: project.backendBuild?.installCommand,
+//         runCommand: project.backendBuild?.runCommand,
+//         version: project.backendBuild?.version
+//       },
+
+//       envs: project.envs,
+//     };
+//     // queue for ecs redeploy;
+//     await backendBuildQueue.add(
+//       "backendBuildQueue",
+//       backendJobData,
+//       jobOptions
+//     )
+//     // if this is successfull it automatically does cache clear for itself absed on current code structure in deployment worker
+
+//   } else {
+//     // remove s3 artifact for current deployment. 
+//     // invalidate cache used in routing service.
+//   }
+//   project.currentDeployment = previousDeploymentId;
+//   await project.save();
+// })
 
 export {
-  deployProject, getDeployment, getAllUserDeployment, deployTo, roleBackProject
+  deployProject, getDeployment, getAllUserDeployment, deployTo, // roleBackProject
 }

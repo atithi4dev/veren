@@ -1,4 +1,4 @@
-import { Schema, model } from 'mongoose'
+import { Schema, Types, model } from 'mongoose'
 import { IDeployment } from "../types/deployment.js"
 
 const deploymentSchema = new Schema<IDeployment>({
@@ -6,6 +6,19 @@ const deploymentSchema = new Schema<IDeployment>({
         type: Schema.Types.ObjectId,
         ref: "Project",
         required: true
+    },
+    type: {
+        type: String,
+        enum: ["deploy" ,"rollback"],
+        default: "deploy"
+    },
+    rollBackTo: {
+        type: Schema.Types.ObjectId,
+        ref:"Deployment"
+    },
+    rollBackFrom: {
+        type: Schema.Types.ObjectId,
+        ref: "Deployment"
     },
     owner: {
         type: Schema.Types.ObjectId,
@@ -46,6 +59,9 @@ const deploymentSchema = new Schema<IDeployment>({
     },
     rollBackArtifactUrl: {
         type: String,
+    },
+    artifactAvailable: {
+        type: Boolean
     },
     startedAt: {
         type: Date,

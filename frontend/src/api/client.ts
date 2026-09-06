@@ -21,7 +21,7 @@ let apiOptions: Required<Omit<ApiInitOptions, 'baseURL' | 'onAuthFailure'>> & {
   onAuthFailure?: () => void
 } = {
   baseURL: '',
-  refreshEndpoint: '/auth/refresh-token',
+  refreshEndpoint: '',
   withCredentials: true,
   accessTokenKey: 'accessToken',
   refreshTokenKey: 'refreshToken',

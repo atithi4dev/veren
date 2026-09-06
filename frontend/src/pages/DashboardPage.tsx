@@ -648,6 +648,17 @@ const DashboardPage: React.FC = () => {
     }
   }, [])
 
+  const handleRollbackProject = React.useCallback(async (projectId: string) => {
+    if (!projectId) {
+      return
+    }
+
+    try {
+      await projectsApi.rollbackProject(projectId)
+    } catch {
+    }
+  }, [])
+
   const handleViewDeployments = React.useCallback((projectName: string) => {
     if (!projectName) {
       return
@@ -1524,6 +1535,7 @@ const DashboardPage: React.FC = () => {
                   formatCreatedAt={formatCreatedAt}
                   onOpenCreateProject={() => setIsCreateProjectModalOpen(true)}
                   onRedeployProject={handleRedeployProject}
+                  onRollbackProject={handleRollbackProject}
                   onViewDeployments={handleViewDeployments}
                   onOpenEnvModal={handleOpenEnvModal}
                 />

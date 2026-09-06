@@ -121,11 +121,12 @@ const AppContent: React.FC = () => {
   const { resolvedTheme } = useTheme()
   const location = useLocation()
   const isDashboardRoute = location.pathname.startsWith('/dashboard')
+  const isSignupRoute = location.pathname === '/signup'
 
   return (
     <div className={resolvedTheme === 'dark' ? 'tw-min-h-screen tw-bg-md-neutral-10 tw-text-md-neutral-95' : 'tw-min-h-screen tw-bg-md-neutral-99 tw-text-md-neutral-10'}>
-      {!isDashboardRoute && <AppNavbar />}
-      <main className={isDashboardRoute ? '' : 'tw-pt-16'}>
+      {!isDashboardRoute && !isSignupRoute && <AppNavbar />}
+      <main className={isDashboardRoute || isSignupRoute ? '' : 'tw-pt-16'}>
         <Routes>
           <Route path="/" element={<AuthRedirect />} />
           <Route path="/signup" element={<SignupRoute />} />
