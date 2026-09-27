@@ -1,86 +1,74 @@
-# VEREN
+<div align="center">
+  <h1>VEREN</h1>
+  <p><em>Push your code. Get a live URL. No cold starts, no sleeping servers.</em></p>
+</div>
 
-### Veren is a backend driven deployment system that automates building and deploying application from source repositories using a service-oriented architecture.
+<p align="center">
+  <a href="https://github.com/atithi4dev/veren/stargazers"><img src="https://img.shields.io/github/stars/atithi4dev/veren?style=flat-square" alt="Stars"></a>
+  <a href="https://github.com/atithi4dev/veren/releases"><img src="https://img.shields.io/github/v/release/atithi4dev/veren?include_prereleases&label=release&style=flat-square" alt="Release"></a>
+  <a href="https://github.com/atithi4dev/veren/blob/main/LICENSE"><img src="https://img.shields.io/github/license/atithi4dev/veren?style=flat-square" alt="License"></a>
+  <a href="https://github.com/atithi4dev/veren/commits"><img src="https://img.shields.io/github/commit-activity/m/atithi4dev/veren?style=flat-square" alt="Commits"></a>
+  <a href="https://github.com/atithi4dev/veren/issues"><img src="https://img.shields.io/github/issues/atithi4dev/veren?style=flat-square" alt="Issues"></a>
+  <a href="https://discord.gg/tACgSEYz"><img src="https://img.shields.io/badge/chat-Discord-5865F2?style=flat-square&logo=Discord&logoColor=white" alt="Discord"></a>
+</p>
 
-## Guides -
-[~ Documentation]()
+<p align="center">
+  <img src="https://res.cloudinary.com/dgnj1rfng/image/upload/v1790512164/veren.png" alt="Veren preview" width="1000" />
+</p>
 
-[~ ARCHITECTURE](https://github.com/atithi4dev/veren/blob/main/Docs/ARCHITECTURE.md)
+## What is Veren?
 
-[~ API Walkthrough](https://github.com/atithi4dev/veren/blob/main/Docs/api-docs/API.md)
+You connect a GitHub repo, Veren builds it and deploys it, and you get a link you can share right away.
 
-[~ ECR IMAGES FOR USE CASE](https://github.com/atithi4dev/veren/blob/main/Docs/BUILDER_IMAGES_MAPPING.md)
+Most free deployment tools put your app to sleep when nobody's visiting, to save money. Sounds fine until someone actually clicks your link and sits there waiting for it to wake up. Veren doesn't do that. Once your app is deployed, it stays running — so the link just works, every time, for whoever opens it.
 
-## Project Setup -
+Behind that link, Veren isn't one big process doing everything. A gateway handles your requests, workers pick up build and deploy jobs from a queue, isolated containers do the actual building, and a routing service sends traffic to the right place. Keeping backends always-on is what makes that split necessary — someone has to track running services, IPs, and routes instead of just spinning things up on demand.
 
-**Clone the repository:**
+## What you get
+
+- **A live URL from a repo** — connect GitHub, pick a branch, deploy
+- **No cold starts** — your backend stays up, no waiting around for the first request
+- **Deploys on push** — set it up once, every push redeploys automatically
+- **Isolated builds** — each build runs in its own sandboxed container, so one project's build can't touch another's
+- **Real build logs** — watch your build happen instead of guessing why it failed
+- **One-click rollback** — something broke? Go back to the last build that worked
+- **Frontend and backend, both covered** — static sites go to S3 + CDN, backends run as always-on services
+
+## Guides
+
+| Guide | Description |
+|---|---|
+| [Getting Started](https://github.com/atithi4dev/veren/blob/main/Docs/GETTING_STARTED.md) | Local setup and development workflow |
+| [Architecture](https://github.com/atithi4dev/veren/blob/main/Docs/ARCHITECTURE.md) | System design, event model, and tradeoffs |
+| [API Walkthrough](https://github.com/atithi4dev/veren/blob/main/Docs/api-docs/API.md) | REST API reference |
+| [Builder Images Mapping](https://github.com/atithi4dev/veren/blob/main/Docs/BUILDER_IMAGES_MAPPING.md) | ECS task and builder image configuration |
+
+## Quick Start
 
 ```bash
 git clone <repository-url>
 cd veren
-``` 
-
-We assume you have already gone through the required configuration and added the necessary files as described in [@essentials](https://github.com/atithi4dev/veren/blob/main/Docs/GETTING_STARTED.md) before starting the project.
-
-**Start the services using Docker Compose:**
-```bash
 sudo docker compose -f docker-compose.dev.yml up --build
 ```
-Now you are ready to visit [api-guidelines](https://github.com/atithi4dev/veren/blob/main/Docs/api-docs/API.md) to access the differnt routes and supported features. 
 
-## Architecture Overview -
+Environment configuration, webhook forwarding, and frontend setup are covered in [Getting Started](https://github.com/atithi4dev/veren/blob/main/Docs/GETTING_STARTED.md).
 
-[~ ARCHITECTURE](https://github.com/atithi4dev/veren/blob/main/Docs/ARCHITECTURE.md)
+## Contributing
 
-**VEREN** is built as a cloud-native, backend-first deployment platform using a service-oriented architecture:
+This project began as a learning exercise and is not actively maintained on a long-term roadmap by the [owner](https://github.com/atithi4dev). Contributions are welcome regardless — issues and pull requests, including small ones, are reviewed as time allows. There are no formal contribution requirements; clarity and intent matter more than polish.
 
-**API Gateway:** Central entry point for all project and deployment requests.
+## Support
 
-**Worker Services:** Handle build execution, deployment orchestration, and asynchronous job processing.
+- [Issues](https://github.com/atithi4dev/veren/issues)
+- [Discord](https://discord.gg/tACgSEYz)
+- [Email](mailto:atithisingh.dev@gmail.com)
 
-**Artifact Storage:** Stores deployment artifacts using cloud storage (S3-compatible).
+## License
 
-**Database Layer:** Tracks project metadata, deployment state, and logs.
+See [LICENSE](https://github.com/atithi4dev/veren/blob/main/LICENSE).
 
-**Asynchronous Event Flow:** Ensures reliability and observability of deployments across multiple services.
+<div align="center">
 
-## Contributions -
-This project was originally created as a practice and learning exercise and is not actively maintained long-term by the [@owner](https://github.com/atithi4dev) 
+Made by <a href="https://github.com/atithi4dev">@atithi4dev</a>
 
-That said, contributions are welcome.
-
-As an aspiring developer, there may be design gaps, edge cases, or implementation issues in the system. If you identify areas for improvement or feel something should be added or refined, feel free to open an issue or submit a pull request.
-
-Reasonable changes and improvements will be reviewed and merged when possible, keeping in mind academic and development commitments.
-
-
-## Contribution Guidelines - 
-This project is open to help and suggestions rather than strict contributions.
-
-If you notice something that can be improved, simplified, or fixed, feel free to:
-
-Open an issue
-
-Suggest changes
-
-Submit a pull request (even small ones)
-
-There are no strict rules - clarity and intent matter more than perfection.
-Any help or feedback is appreciated
-
-## Support -
-
-Open an [issue](https://github.com/atithi4dev/veren/issues) on the GitHub repository.
-
-Tag on [Discord](https://discord.gg/tACgSEYz)
-
-Reach out via [email](atithisingh.dev@gmail.com) or project discussion.
-
-
-</br>
-</br>
-</br>
-</br>
-</br>
-</br>
-</br>
+</div>
